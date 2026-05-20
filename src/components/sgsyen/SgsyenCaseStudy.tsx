@@ -223,7 +223,7 @@ export default function SgsyenCaseStudy() {
             <div 
               id="casestudy-meta-col-deliverable" 
               className={`col-span-2 cursor-pointer hover:opacity-85 transition-opacity bg-[#A58261]/5 p-3.5 border border-dashed border-[#A58261]/25 rounded-md mt-1`}
-              onClick={() => window.open('/temple-street-alley/miaojie-business-book.html', '_blank')}
+              onClick={() => window.open('/temple-street-alley/plan.html', '_blank')}
               title={locale === 'zh' ? '点击阅读庙街商业技术蓝皮书' : 'Click to read Temple Street Business Bluebook'}
             >
               <div id="casestudy-meta-col-deliverable-lbl" className="text-[#A58261] text-[9px] uppercase font-bold tracking-wider mb-1">

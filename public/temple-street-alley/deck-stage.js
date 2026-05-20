@@ -135,11 +135,23 @@
       opacity: 0;
       pointer-events: none;
       visibility: hidden;
+      transform: translateX(60px);
+      transition: transform 380ms cubic-bezier(.2,.8,.2,1), opacity 380ms ease;
+      z-index: 0;
     }
     ::slotted([data-deck-active]) {
       opacity: 1;
       pointer-events: auto;
       visibility: visible;
+      transform: translateX(0);
+      z-index: 2;
+    }
+    ::slotted([data-deck-exit]) {
+      opacity: 0;
+      visibility: visible;
+      transform: translateX(-60px);
+      z-index: 1;
+      transition: transform 380ms cubic-bezier(.2,.8,.2,1), opacity 380ms ease;
     }
 
     /* Tap zones for mobile — back/forward thirds like Stories.
@@ -791,6 +803,7 @@
       if (this._liveTimer) clearTimeout(this._liveTimer);
       if (this._tweakTimer) clearTimeout(this._tweakTimer);
       if (this._railAnimTimer) clearTimeout(this._railAnimTimer);
+      if (this._exitTimer) clearTimeout(this._exitTimer);
       if (this._scaleRaf) cancelAnimationFrame(this._scaleRaf);
       if (this._liveObserver) this._liveObserver.disconnect();
       if (this._railObserver) this._railObserver.disconnect();
@@ -1103,9 +1116,20 @@
       // (reload banner path in viewer-handle.ts) lands on the current slide,
       // not the stale deep-link hash from initial load.
       try { history.replaceState(null, '', '#' + (curr + 1)); } catch (e) {}
+      // Slide transition: previous slide exits left, new slides enter from right.
+      if (prev >= 0 && prev !== curr && this._slides[prev]) {
+        // Clear any stale exit markers first.
+        this._slides.forEach((s) => s.removeAttribute('data-deck-exit'));
+        const prevSlide = this._slides[prev];
+        prevSlide.setAttribute('data-deck-exit', '');
+        if (this._exitTimer) clearTimeout(this._exitTimer);
+        this._exitTimer = setTimeout(() => {
+          prevSlide.removeAttribute('data-deck-exit');
+        }, 420);
+      }
       this._slides.forEach((s, i) => {
         if (i === curr) s.setAttribute('data-deck-active', '');
-        else s.removeAttribute('data-deck-active');
+        else if (!s.hasAttribute('data-deck-exit')) s.removeAttribute('data-deck-active');
       });
       if (this._countEl) this._countEl.textContent = String(curr + 1);
       // Follow-scroll on every navigation (init deep-link, keyboard, click,

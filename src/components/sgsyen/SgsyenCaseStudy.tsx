@@ -131,7 +131,8 @@ export default function SgsyenCaseStudy() {
             onClick={() => window.open('https://www.sgsyen.com/temple-street-alley/slides.html', '_blank')}
             className="flex items-center justify-center gap-2 px-5 py-3 bg-[#1D1D1B] hover:bg-[#A58261] text-[#FAF9F5] rounded text-xs tracking-widest font-sans font-bold uppercase transition-all shadow-md cursor-pointer border border-transparent hover:border-[#FAF9F5]/20"
           >
-            <span>{locale === 'zh' ? '放映 庙街小巷 演示幻灯片' : 'Play Slide Deck (16:9)'}</span>
+            <Presentation className="w-4 h-4 text-[#C4A35A] animate-pulse" />
+            <span>{locale === 'zh' ? '庙街小巷 演示幻灯片' : 'Play Slide Deck (16:9)'}</span>
           </button>
 
           <div id="casestudy-slide-indicators" className="flex items-center justify-center gap-4 font-mono text-xs">

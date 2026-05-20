@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ModelPricingTable from './components/ModelPricingTable';
 import CostCalculator from './components/CostCalculator';
 import InsightArticles from './components/InsightArticles';
@@ -9,8 +10,16 @@ import { LocaleProvider, useLocale } from './context/LocaleContext';
 
 function InnerApp() {
   const { locale, setLocale, t, authorizedEmail, authenticate, logout, showLoginModal, setShowLoginModal } = useLocale();
-  const [activeApp, setActiveApp] = useState<'sgsyen' | 'gemini'>('sgsyen');
-  const [activeTab, setActiveTab] = useState<'calculator' | 'articles' | 'tariffs'>('calculator');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Derive active state from URL path
+  const path = location.pathname;
+  const activeApp = path.startsWith('/gemini') ? 'gemini' : 'sgsyen';
+  let activeTab: 'calculator' | 'articles' | 'tariffs' = 'calculator';
+  if (path.includes('/pricing')) activeTab = 'tariffs';
+  else if (path.includes('/analysis')) activeTab = 'articles';
+  
   const [selectedModelId, setSelectedModelId] = useState<string>('gemini-1.5-pro');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -36,7 +45,7 @@ function InnerApp() {
       const geminiPrefix = locale === 'zh' ? 'Gemini 算力实验室' : 'Gemini Compute Lab';
       document.title = `${tabNames[activeTab]} | ${geminiPrefix} | ${baseTitle}`;
     }
-  }, [activeApp, activeTab, locale]);
+  }, [path, locale]);
 
   return (
     <div className="w-full bg-[#FDFCF9] text-[#1D1D1B] font-serif min-h-screen flex flex-col overflow-x-hidden antialiased">
@@ -52,7 +61,7 @@ function InnerApp() {
       <div className="w-full max-w-[1300px] mx-auto border-x border-[#1D1D1B]/10 grid grid-cols-2 text-center text-xs font-sans font-bold uppercase select-none border-b border-[#1D1D1B]/10 bg-white">
         <button
           id="toggle-sgsyen-portal-btn"
-          onClick={() => setActiveApp('sgsyen')}
+          onClick={() => navigate('/')}
           className={`py-4 transition-all flex items-center justify-center gap-2 cursor-pointer outline-none ${
             activeApp === 'sgsyen'
               ? 'bg-[#1D1D1B] text-[#FDFCF9]'
@@ -63,7 +72,7 @@ function InnerApp() {
         </button>
         <button
           id="toggle-gemini-pricing-btn"
-          onClick={() => setActiveApp('gemini')}
+          onClick={() => navigate('/gemini/calculator/')}
           className={`py-4 transition-all flex items-center justify-center gap-2 cursor-pointer outline-none ${
             activeApp === 'gemini'
               ? 'bg-[#1D1D1B] text-[#FDFCF9]'
@@ -259,7 +268,7 @@ function InnerApp() {
                 <div className="flex flex-col sm:flex-row border border-[#1D1D1B]/20 bg-[#FAF9F5] p-1.5 rounded items-stretch sm:items-center justify-between gap-4 select-none">
                   <div className="flex flex-wrap gap-1 font-sans text-xs">
                     <button
-                      onClick={() => setActiveTab('calculator')}
+                      onClick={() => navigate('/gemini/calculator/')}
                       className={`flex items-center gap-1.5 px-4 py-2.5 rounded font-bold tracking-wider uppercase transition-colors outline-none cursor-pointer ${
                         activeTab === 'calculator' 
                           ? 'bg-[#1D1D1B] text-[#FDFCF9]' 
@@ -270,7 +279,7 @@ function InnerApp() {
                       {t('tabCalculator')}
                     </button>
                     <button
-                      onClick={() => setActiveTab('articles')}
+                      onClick={() => navigate('/gemini/analysis/')}
                       className={`flex items-center gap-1.5 px-4 py-2.5 rounded font-bold tracking-wider uppercase transition-colors outline-none cursor-pointer ${
                         activeTab === 'articles' 
                           ? 'bg-[#1D1D1B] text-[#FDFCF9]' 
@@ -281,7 +290,7 @@ function InnerApp() {
                       {t('tabArticles')}
                     </button>
                     <button
-                      onClick={() => setActiveTab('tariffs')}
+                      onClick={() => navigate('/gemini/pricing/')}
                       className={`flex items-center gap-1.5 px-4 py-2.5 rounded font-bold tracking-wider uppercase transition-colors outline-none cursor-pointer ${
                         activeTab === 'tariffs' 
                           ? 'bg-[#1D1D1B] text-[#FDFCF9]' 

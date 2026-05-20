@@ -859,7 +859,7 @@
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
         </button>
         <span class="divider"></span>
-        <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset (R)">Reset<span class="kbd">R</span></button>
+        <button class="btn reset" type="button" aria-label="Reset to first slide" title="Reset">Reset</button>
         <span class="divider"></span>
         <button class="btn fullscreen" type="button" aria-label="Toggle fullscreen" title="Fullscreen (F)">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h4M4 4v4M12 12h-4M12 12v-4M4 12h4M4 12v-4M12 4h-4M12 4v4"/></svg>

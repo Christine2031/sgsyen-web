@@ -1389,7 +1389,7 @@
       if (this._presenting && this._overlay) {
         this._overlay.removeAttribute('data-visible');
       }
-      this._syncRail();
+      this._syncRailHidden();
     }
 
     // ── Thumbnail rail ────────────────────────────────────────────────────

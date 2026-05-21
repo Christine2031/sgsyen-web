@@ -294,6 +294,7 @@
       z-index: 2147482500;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.18) transparent;
+      transition: transform 260ms cubic-bezier(.2,.8,.2,1), opacity 260ms ease;
     }
     .rail::-webkit-scrollbar { width: 8px; }
     .rail::-webkit-scrollbar-track { background: transparent; margin: 2px; }
@@ -310,7 +311,11 @@
     }
     :host([no-rail]) .rail,
     :host([noscale]) .rail { display: none; }
-    .rail[data-presenting] { display: none; }
+    .rail[data-presenting] {
+      transform: translateX(-100%);
+      opacity: 0;
+      pointer-events: none;
+    }
     /* User-driven show/hide (the TweaksPanel toggle) slides instead of
        popping. Transitions are gated on :host([data-rail-anim]) — set only
        for the 200ms around the toggle — so window-resize and rail-width
@@ -1375,8 +1380,17 @@
       const el = document.documentElement;
       const isFull = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
       if (!isFull) {
+        // Hide rail immediately for a snappier fullscreen transition.
+        this._presenting = true;
+        this._syncRailHidden();
         const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-        if (req) req.call(el).catch(() => {});
+        if (req) {
+          req.call(el).catch(() => {
+            // If fullscreen request fails, restore rail.
+            this._presenting = false;
+            this._syncRailHidden();
+          });
+        }
       } else {
         const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
         if (exit) exit.call(document).catch(() => {});

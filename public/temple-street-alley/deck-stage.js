@@ -1134,7 +1134,7 @@
       }
       this._slides.forEach((s, i) => {
         if (i === curr) s.setAttribute('data-deck-active', '');
-        else if (!s.hasAttribute('data-deck-exit')) s.removeAttribute('data-deck-active');
+        else s.removeAttribute('data-deck-active');
       });
       if (this._countEl) this._countEl.textContent = String(curr + 1);
       // Follow-scroll on every navigation (init deep-link, keyboard, click,

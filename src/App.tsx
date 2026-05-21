@@ -9,20 +9,22 @@ import { Calculator, FileText, Layers, RefreshCw } from 'lucide-react';
 import { LocaleProvider, useLocale } from './context/LocaleContext';
 
 function InnerApp() {
-  const { locale, setLocale, t, authorizedEmail, authenticate, logout, showLoginModal, setShowLoginModal } = useLocale();
+  const { locale, setLocale, t, authorizedEmail, login, logout, showLoginModal, setShowLoginModal } = useLocale();
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Derive active state from URL path
   const path = location.pathname;
   const activeApp = path.startsWith('/gemini') ? 'gemini' : 'sgsyen';
   let activeTab: 'calculator' | 'articles' | 'tariffs' = 'calculator';
   if (path.includes('/pricing')) activeTab = 'tariffs';
   else if (path.includes('/analysis')) activeTab = 'articles';
-  
+
   const [selectedModelId, setSelectedModelId] = useState<string>('gemini-1.5-pro');
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const containerVariants = {
     hidden: { opacity: 0, y: 10 },
@@ -212,7 +214,7 @@ function InnerApp() {
             <main className="flex-1 grid grid-cols-12 gap-0 relative">
               
               {/* Left Vertical Rail */}
-              <div className="hidden lg:col-span-1 border-r border-[#1D1D1B]/10 flex flex-col items-center py-12 select-none">
+              <div className="hidden lg:flex lg:col-span-1 border-r border-[#1D1D1B]/10 flex-col items-center py-12 select-none">
                 <div className="[writing-mode:vertical-rl] rotate-180 text-[10px] tracking-[0.3em] uppercase font-sans text-stone-600 font-bold opacity-45 whitespace-nowrap">
                   {t('verticalRail')}
                 </div>
@@ -432,7 +434,7 @@ function InnerApp() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-md z-[700] flex items-center justify-center p-4 select-none"
-            onClick={() => setShowLoginModal(false)}
+            onClick={() => { setShowLoginModal(false); setLoginEmail(''); setLoginPassword(''); setLoginError(''); }}
           >
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
@@ -442,7 +444,7 @@ function InnerApp() {
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                onClick={() => setShowLoginModal(false)}
+                onClick={() => { setShowLoginModal(false); setLoginEmail(''); setLoginPassword(''); setLoginError(''); }}
                 className="absolute top-5 right-5 text-stone-400 hover:text-stone-700 cursor-pointer"
               >
                 ✕
@@ -458,21 +460,28 @@ function InnerApp() {
                 </div>
 
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     setLoginError('');
-                    if (!loginEmail || !loginEmail.includes('@')) {
-                      setLoginError(locale === 'zh' ? '请输入有效的电子邮件信箱。' : 'Please provide a valid client email address.');
+                    if (!loginEmail || !loginPassword) {
+                      setLoginError(locale === 'zh' ? '请填写邮箱和密码。' : 'Please enter your email and password.');
                       return;
                     }
-                    authenticate(loginEmail);
-                    setShowLoginModal(false);
-                    setLoginEmail('');
+                    setLoginLoading(true);
+                    const { error } = await login(loginEmail, loginPassword);
+                    setLoginLoading(false);
+                    if (error) {
+                      setLoginError(error);
+                    } else {
+                      setShowLoginModal(false);
+                      setLoginEmail('');
+                      setLoginPassword('');
+                    }
                   }}
                   className="space-y-4"
                 >
                   <div className="space-y-2 text-left">
-                    <label className="text-[9px] uppercase font-sans tracking-widest text-[#1D1D1B] font-bold block">認購人受托邮箱 (Partner subscriber email)</label>
+                    <label className="text-[9px] uppercase font-sans tracking-widest text-[#1D1D1B] font-bold block">认购人邮箱 (Email)</label>
                     <input
                       type="email"
                       required
@@ -483,15 +492,33 @@ function InnerApp() {
                     />
                   </div>
 
+                  <div className="space-y-2 text-left">
+                    <label className="text-[9px] uppercase font-sans tracking-widest text-[#1D1D1B] font-bold block">密码 (Password)</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full bg-[#FAF9F5] border border-[#1D1D1B]/15 px-4 py-3 text-sm rounded outline-none text-[#1D1D1B] font-sans focus:border-[#C4A35A] transition-colors placeholder-stone-400"
+                    />
+                  </div>
+
                   {loginError && (
                     <p className="text-xs text-[#C83E3E] font-sans italic">{loginError}</p>
                   )}
 
                   <button
                     type="submit"
-                    className="w-full bg-[#1D1D1B] text-[#FDFCF9] hover:bg-[#A58261] transition-colors py-3 text-xs tracking-widest font-sans font-bold uppercase cursor-pointer rounded"
+                    disabled={loginLoading}
+                    className="w-full bg-[#1D1D1B] text-[#FDFCF9] hover:bg-[#A58261] transition-colors py-3 text-xs tracking-widest font-sans font-bold uppercase cursor-pointer rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    校验契约，立即验证 (Verify Account)
+                    {loginLoading ? (
+                      <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full" />
+                    ) : null}
+                    {loginLoading
+                      ? (locale === 'zh' ? '验证中...' : 'Verifying...')
+                      : (locale === 'zh' ? '立即登录 (Sign In)' : 'Sign In')}
                   </button>
                 </form>
 

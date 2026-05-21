@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, ArrowRight, X, Download, Lock, CheckCircle2, Loader2, Calendar, Tag } from 'lucide-react';
 import { useLocale } from '../../context/LocaleContext';
+import { supabase } from '../../lib/supabase';
 
 interface Report {
   id: string;
@@ -15,7 +16,7 @@ interface Report {
   content?: string;
 }
 
-const API = "https://sgsyen-api-827638954474.asia-east1.run.app";
+const API = import.meta.env.VITE_API_URL || "https://sgsyen-api-827638954474.asia-east1.run.app";
 
 const FALLBACK_REPORTS: Report[] = [
   {
@@ -97,11 +98,29 @@ export default function SgsyenReports() {
 
   useEffect(() => {
     setLoading(true);
-    const timer = setTimeout(() => {
-      setReports(locale === 'zh' ? FALLBACK_REPORTS : FALLBACK_REPORTS_EN);
-      setLoading(false);
-    }, 250);
-    return () => clearTimeout(timer);
+    const controller = new AbortController();
+
+    fetch(`${API}/reports`, { signal: controller.signal })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: Report[]) => {
+        if (data && data.length > 0) {
+          setReports(data);
+        } else {
+          setReports(locale === 'zh' ? FALLBACK_REPORTS : FALLBACK_REPORTS_EN);
+        }
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          // API 不可用时静默降级到 fallback 数据
+          setReports(locale === 'zh' ? FALLBACK_REPORTS : FALLBACK_REPORTS_EN);
+        }
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
   }, [locale]);
 
   const formatDate = (iso?: string) => {
@@ -120,52 +139,108 @@ export default function SgsyenReports() {
     setSelectedReport(staticMatch || report);
   };
 
-  const handleDownloadPDF = (slug: string) => {
+  const handleDownloadPDF = async (slug: string) => {
     if (!isMemberLoggedIn) {
       setShowLoginModal(true);
       return;
     }
     setDownloading(true);
     setDownloadSuccess(null);
-    
-    setTimeout(() => {
-      setDownloadSuccess(locale === 'zh' 
-        ? '🎉 [会员专享下载就绪] 《SGSYEN_' + slug + '.pdf》 核心报告文件包下载成功！ (GCS 离线通道安全交付已完成)'
-        : '🎉 [Authorized Access Ready] "SGSYEN_' + slug + '.pdf" successfully downloaded via localized GCS fallback channel.'
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setShowLoginModal(true);
+        setDownloading(false);
+        return;
+      }
+      const res = await fetch(`${API}/reports/${slug}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const { url } = await res.json();
+      // 触发真实文件下载
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SGSYEN_${slug}.pdf`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setDownloadSuccess(locale === 'zh'
+        ? `🎉 [会员专享下载就绪] 《SGSYEN_${slug}.pdf》 已通过 GCS 安全通道完成交付。`
+        : `🎉 [Authorized Access Ready] "SGSYEN_${slug}.pdf" delivered via secure GCS channel.`
       );
+    } catch (err: any) {
+      setDownloadSuccess(locale === 'zh'
+        ? `⚠️ 下载失败：${err.message}`
+        : `⚠️ Download failed: ${err.message}`
+      );
+    } finally {
       setDownloading(false);
-    }, 1000);
+    }
   };
+
+  // 解析行内 **bold** 和 *italic* 标记
+  function renderInline(text: string): React.ReactNode[] {
+    const parts: React.ReactNode[] = [];
+    const regex = /(\*\*(.+?)\*\*|\*(.+?)\*)/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      if (match[2] !== undefined) {
+        parts.push(<strong key={match.index} className="font-bold text-[#1D1D1B]">{match[2]}</strong>);
+      } else if (match[3] !== undefined) {
+        parts.push(<em key={match.index} className="italic">{match[3]}</em>);
+      }
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+    return parts;
+  }
 
   function renderMarkdownContent(md: string) {
     return md.split("\n").map((line, i) => {
       const trimmed = line.trim();
       if (trimmed.startsWith("# ")) {
-        return <h1 key={i} className="text-2xl md:text-3xl font-serif font-black text-[#1D1D1B] mt-10 mb-6 border-b pb-4">{trimmed.slice(2)}</h1>;
+        return <h1 key={i} className="text-2xl md:text-3xl font-serif font-black text-[#1D1D1B] mt-10 mb-6 border-b pb-4">{renderInline(trimmed.slice(2))}</h1>;
       }
       if (trimmed.startsWith("## ")) {
-        return <h2 key={i} className="text-xl md:text-xl font-serif font-bold text-[#1D1D1B] mt-10 mb-4">{trimmed.slice(3)}</h2>;
+        return <h2 key={i} className="text-xl font-serif font-bold text-[#1D1D1B] mt-10 mb-4">{renderInline(trimmed.slice(3))}</h2>;
       }
       if (trimmed.startsWith("### ")) {
-        return <h3 key={i} className="text-sm md:text-base font-serif font-semibold text-[#1D1D1B] mt-8 mb-3">{trimmed.slice(4)}</h3>;
+        return <h3 key={i} className="text-sm md:text-base font-serif font-semibold text-[#1D1D1B] mt-8 mb-3">{renderInline(trimmed.slice(4))}</h3>;
       }
       if (trimmed.startsWith("* ")) {
-        return <li key={i} className="text-xs md:text-sm font-sans text-stone-700 leading-relaxed ml-6 list-disc mb-2">{trimmed.slice(2)}</li>;
+        return <li key={i} className="text-xs md:text-sm font-sans text-stone-700 leading-relaxed ml-6 list-disc mb-2">{renderInline(trimmed.slice(2))}</li>;
       }
-      if (trimmed.startsWith("1. ")) {
-        return <li key={i} className="text-xs md:text-sm font-sans text-stone-700 leading-relaxed ml-6 list-decimal mb-2">{trimmed.slice(3)}</li>;
+      if (/^\d+\. /.test(trimmed)) {
+        return <li key={i} className="text-xs md:text-sm font-sans text-stone-700 leading-relaxed ml-6 list-decimal mb-2">{renderInline(trimmed.replace(/^\d+\. /, ''))}</li>;
       }
       if (trimmed.startsWith("> ")) {
         return (
           <blockquote key={i} className="my-6 pl-5 py-2 border-l-4 border-[#C4A35A] bg-[#FAF9F5] italic text-stone-600 font-serif leading-relaxed text-xs md:text-sm">
-            {trimmed.slice(2)}
+            {renderInline(trimmed.slice(2))}
           </blockquote>
         );
       }
       if (trimmed === "") {
         return <div key={i} className="h-4" />;
       }
-      return <p key={i} className="text-xs md:text-sm font-sans leading-[1.8] text-stone-700 mb-4 select-text">{line}</p>;
+      return <p key={i} className="text-xs md:text-sm font-sans leading-[1.8] text-stone-700 mb-4 select-text">{renderInline(line)}</p>;
     });
   }
 

@@ -1,9 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", "Heiti SC", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", "Georgia", "Songti SC", "Noto Serif CJK SC", "Source Han Serif SC", "STSong", "AR PL New Sung", "SimSun", serif;
+  /* Sans: Inter 英文 → Noto Sans SC（web 加载，覆盖 Windows/Linux）→ 系统中文 fallback */
+  --font-sans: "Inter", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", ui-sans-serif, system-ui, sans-serif;
+  /* Serif: Playfair Display 英文 → Noto Serif SC（web 加载，覆盖 Windows/Linux）→ 系统中文 fallback */
+  --font-serif: "Playfair Display", "Noto Serif SC", "Georgia", "Songti SC", "Source Han Serif SC", "STSong", "SimSun", serif;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, monospace;
 }
 

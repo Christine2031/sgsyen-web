@@ -16,7 +16,7 @@ interface Report {
   content?: string;
 }
 
-const API = import.meta.env.VITE_API_URL || "https://sgsyen-api-827638954474.asia-east1.run.app";
+const API = import.meta.env.VITE_API_URL || "https://sgsyen-api-ocjwdme54q-de.a.run.app";
 
 const FALLBACK_REPORTS: Report[] = [
   {

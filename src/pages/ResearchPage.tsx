@@ -101,7 +101,7 @@ export default function ResearchPage() {
       .eq('is_published', true)
       .order('published_at', { ascending: false })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
-    if (cat !== 'all') q = q.eq('category', cat);
+    if (cat !== 'all') q = q.or(`category.eq.${cat},tags.cs.{"${cat}"}`);
     const { data, count } = await q;
     if (data) setArticles(prev => page === 0 ? data : [...prev, ...data]);
     if (count != null) setArtTotal(count);
@@ -138,11 +138,17 @@ export default function ResearchPage() {
     });
   }, []);
 
-  // ── fetch categories ──────────────────────────────────────
+  // ── fetch categories + tags (unified filter set) ─────────
   useEffect(() => {
-    research.from('articles').select('category').eq('is_published', true)
+    research.from('articles').select('category,tags').eq('is_published', true)
       .then(({ data }) => {
-        if (data) setCategories([...new Set(data.map(d => d.category).filter(Boolean))]);
+        if (!data) return;
+        const set = new Set<string>();
+        data.forEach(d => {
+          if (d.category) set.add(d.category);
+          if (Array.isArray(d.tags)) d.tags.forEach((t: string) => t && set.add(t));
+        });
+        setCategories([...set]);
       });
   }, []);
 
@@ -380,11 +386,23 @@ export default function ResearchPage() {
 
                   {/* Body */}
                   <div className="flex-1 min-w-0">
-                    {art.category && (
-                      <span className="inline-flex items-center gap-1 text-[9px] uppercase font-sans font-bold text-[#C83E3E] bg-[#C83E3E]/5 border border-[#C83E3E]/10 px-2 py-0.5 rounded mb-3">
-                        <Tag className="w-3 h-3" />{art.category}
-                      </span>
-                    )}
+                    {/* Category + all tags */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                      {art.category && (
+                        <span className="inline-flex items-center gap-1 text-[9px] uppercase font-sans font-bold text-[#C83E3E] bg-[#C83E3E]/5 border border-[#C83E3E]/10 px-2 py-0.5 rounded">
+                          <Tag className="w-3 h-3" />{art.category}
+                        </span>
+                      )}
+                      {art.tags?.map(tag => (
+                        <button
+                          key={tag}
+                          onClick={e => { e.stopPropagation(); setCategory(tag); setArticles([]); setArtPage(0); loadArticles(0, tag); }}
+                          className="text-[9px] font-sans text-[#A58261] bg-[#A58261]/5 border border-[#A58261]/15 px-2 py-0.5 rounded hover:bg-[#A58261]/15 transition-colors cursor-pointer"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
                     <h3 className="text-xl md:text-2xl font-serif font-bold text-[#1D1D1B] group-hover:text-[#C4A35A] transition-colors leading-[1.3] mb-3"
                       style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
                       {isZh ? art.title : (art.title_en || art.title)}

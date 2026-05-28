@@ -4,12 +4,16 @@ import SgsyenDomains from './SgsyenDomains';
 import SgsyenNetwork from './SgsyenNetwork';
 import SgsyenCaseStudy from './SgsyenCaseStudy';
 import SgsyenReports from './SgsyenReports';
+import MacroPulseBar from './MacroPulseBar';
 
 export default function SgsyenPortal() {
   return (
     <div id="sgsyen-portal-layout" className="w-full flex flex-col bg-[#FDFCF9] scroll-smooth antialiased">
       {/* 1. Hero Landing Cover */}
       <SgsyenHero />
+
+      {/* 1.5 Live Macro Pulse — regime signal + 15 market indicators */}
+      <MacroPulseBar />
 
       {/* 2. Study fields & metrics */}
       <SgsyenDomains />

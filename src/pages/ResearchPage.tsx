@@ -6,9 +6,10 @@ import {
   ChevronDown, Loader2, Clock, Star, Search, X, Terminal, Copy, Check,
   FileText, Download, Lock,
 } from 'lucide-react';
-import { research, Article, PolicyEvent, MacroPoint } from '../lib/research';
+import { research, Article, PolicyEvent } from '../lib/research';
 import { supabase } from '../lib/supabase';
 import { useLocale } from '../context/LocaleContext';
+import MacroPulseBar from '../components/sgsyen/MacroPulseBar';
 
 const PAGE_SIZE = 8;
 
@@ -27,30 +28,6 @@ const EVENT_TAG: Record<string, string> = {
   regulation:   'text-purple-600 bg-purple-50 border-purple-200',
   market:       'text-emerald-600 bg-emerald-50 border-emerald-200',
 };
-
-const MACRO_CARDS = [
-  { id: 'SP500',          zh: '标普 500',      en: 'S&P 500',      unit: 'pts' },
-  { id: 'NASDAQ100',      zh: '纳指 100',      en: 'Nasdaq 100',   unit: 'pts' },
-  { id: 'CSI300',         zh: '沪深 300',      en: 'CSI 300',      unit: 'pts' },
-  { id: 'HSI',            zh: '恒生指数',      en: 'Hang Seng',    unit: 'pts' },
-  { id: 'NIKKEI225',      zh: '日经 225',      en: 'Nikkei 225',   unit: 'pts' },
-  { id: 'GOLD_USD',       zh: '黄  金',        en: 'Gold',         unit: 'USD' },
-  { id: 'WTI_OIL',        zh: 'WTI 原油',      en: 'WTI Oil',      unit: 'USD' },
-  { id: 'COPPER',         zh: '铜',            en: 'Copper',       unit: 'USD' },
-  { id: 'DXY',            zh: '美元指数',      en: 'DXY',          unit: 'pts' },
-  { id: 'VIX',            zh: 'VIX 恐慌',      en: 'VIX',          unit: 'pts' },
-  { id: 'US10Y',          zh: '美债 10Y',      en: 'US 10Y',       unit: '%'   },
-  { id: 'US3M',           zh: '美债 3M',       en: 'US 3M',        unit: '%'   },
-  { id: 'FEDFUNDS',       zh: '联邦基金',      en: 'Fed Funds',    unit: '%'   },
-  { id: 'CN_LPR_1Y',      zh: 'LPR 1Y',       en: 'CN LPR 1Y',    unit: '%'   },
-  { id: 'BAMLH0A0HYM2',   zh: 'HY 利差',       en: 'HY Spread',    unit: 'bp'  },
-];
-
-function fmtVal(v: number, unit: string) {
-  if (unit === '%') return v.toFixed(2) + '%';
-  if (v >= 1000)    return v.toLocaleString('en-US', { maximumFractionDigits: 0 });
-  return v.toFixed(2);
-}
 
 function fmtDate(iso?: string) {
   if (!iso) return '';
@@ -75,13 +52,6 @@ export default function ResearchPage() {
   const [upcoming,    setUpcoming]    = useState<PolicyEvent[]>([]);
   const [recent,      setRecent]      = useState<PolicyEvent[]>([]);
   const [evLoading,   setEvLoading]   = useState(true);
-
-  // macro
-  const [macro,       setMacro]       = useState<Record<string, MacroPoint>>({});
-  const [macLoading,  setMacLoading]  = useState(true);
-
-  // regime signal
-  const [regime,      setRegime]      = useState<{ zh: string; en: string; signal: string; fed: number; inflation: string } | null>(null);
 
   // search
   const [searchInput,  setSearchInput]  = useState('');
@@ -187,35 +157,6 @@ export default function ResearchPage() {
     });
   }, []);
 
-  // ── fetch macro ───────────────────────────────────────────
-  useEffect(() => {
-    Promise.all(
-      MACRO_CARDS.map(c =>
-        research.from('macro_timeseries').select('series_id,series_name,date,value,unit')
-          .eq('series_id', c.id).order('date', { ascending: false }).limit(1)
-      )
-    ).then(results => {
-      const map: Record<string, MacroPoint> = {};
-      results.forEach((r, i) => { if (r.data?.[0]) map[MACRO_CARDS[i].id] = r.data[0]; });
-      setMacro(map);
-      setMacLoading(false);
-    });
-  }, []);
-
-  // ── fetch regime signal from GSYEN TERMINAL ─────────────
-  useEffect(() => {
-    fetch('https://terminal.gsyen.com/api/regime')
-      .then(r => r.json())
-      .then(d => setRegime({
-        zh:        d.regime.zh,
-        en:        d.regime.en,
-        signal:    d.regime.signal,
-        fed:       d.inputs.fed_funds_rate,
-        inflation: d.inputs.inflation_direction,
-      }))
-      .catch(() => {});
-  }, []);
-
   // ── fetch categories only (筛选条只放分类，tags 在行内) ──
   useEffect(() => {
     research.from('articles').select('category').eq('is_published', true)
@@ -259,72 +200,8 @@ export default function ResearchPage() {
           </div>
         </div>
 
-        {/* ── Macro Ticker ─────────────────────────────────── */}
-        <section className="border-b border-[#1D1D1B]/10 overflow-hidden bg-white select-none">
-          {/* label */}
-          <div className="flex items-center">
-            <div className="shrink-0 px-4 py-3 bg-[#1D1D1B] text-[#C4A35A] text-[9px] font-sans font-bold uppercase tracking-[0.2em] z-10">
-              MACRO PULSE
-            </div>
-            {/* scrolling track */}
-            <div className="flex-1 overflow-hidden relative">
-              <div
-                className="flex gap-0 whitespace-nowrap"
-                style={{ animation: macLoading ? 'none' : 'ticker-scroll 40s linear infinite' }}
-              >
-                {/* duplicate for seamless loop */}
-                {[...MACRO_CARDS, ...MACRO_CARDS].map((card, i) => {
-                  const pt = macro[card.id];
-                  return (
-                    <div key={i} className="inline-flex items-center gap-2 px-5 py-3 border-r border-[#1D1D1B]/8">
-                      <span className="text-[9px] font-sans uppercase tracking-widest text-stone-400">
-                        {isZh ? card.zh : card.en}
-                      </span>
-                      {macLoading || !pt
-                        ? <span className="w-12 h-3 bg-stone-100 rounded animate-pulse inline-block" />
-                        : <span className="text-sm font-mono font-semibold text-[#1D1D1B]">{fmtVal(pt.value, card.unit)}</span>
-                      }
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-          <style>{`
-            @keyframes ticker-scroll {
-              0%   { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-          `}</style>
-        </section>
-
-        {/* ── Regime Signal ────────────────────────────────── */}
-        {regime && (
-          <section className="px-6 md:px-12 lg:px-20 py-4 border-b border-[#1D1D1B]/10 bg-[#FAF9F5]">
-            <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-8">
-              <div className="flex items-center gap-3">
-                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                <span className="text-[9px] font-sans font-bold uppercase tracking-[0.2em] text-[#A58261]">
-                  {isZh ? '当前宏观象限' : 'MACRO REGIME'}
-                </span>
-                <span className="text-sm font-serif font-semibold text-[#1D1D1B]">
-                  {isZh ? regime.zh : regime.en}
-                </span>
-              </div>
-              <div className="h-px md:h-4 md:w-px bg-[#1D1D1B]/15 shrink-0" />
-              <span className="text-xs font-sans text-stone-500">
-                {isZh ? '配置信号：' : 'Signal: '}
-                <span className="text-[#C83E3E] font-medium">{regime.signal}</span>
-              </span>
-              <div className="h-px md:h-4 md:w-px bg-[#1D1D1B]/15 shrink-0" />
-              <span className="text-[10px] font-mono text-stone-400">
-                Fed {regime.fed}% · CPI {isZh
-                  ? (regime.inflation === 'rising' ? '↑上行' : regime.inflation === 'falling' ? '↓下行' : '→平稳')
-                  : (regime.inflation === 'rising' ? '↑ rising' : regime.inflation === 'falling' ? '↓ falling' : '→ flat')}
-              </span>
-            </div>
-          </section>
-        )}
+        {/* ── Macro Pulse Bar (regime + 15 indicators, scrolling) ── */}
+        <MacroPulseBar />
 
         {/* ── Hero ─────────────────────────────────────────── */}
         <section

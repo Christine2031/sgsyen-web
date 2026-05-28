@@ -2543,74 +2543,97 @@ image-slot{display:block;}
 <script src="image-slot.js"></script>
 <script src="deck-stage.js"></script>
 
-<!-- ── 独立全屏控制（绕开 deck-stage 组件逻辑）─────────────────────── -->
+<!-- ── 独立全屏控制 · 丝滑渐入渐出 ──────────────────────────────────── -->
 <style>
+/* 黑色过渡遮罩 */
+#fs-curtain {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 99998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .38s cubic-bezier(.4,0,.2,1);
+}
+#fs-curtain.show { opacity: 1; pointer-events: auto; }
+
+/* 全屏按钮 */
 #fs-btn {
   position: fixed;
-  bottom: 18px;
-  right: 18px;
-  z-index: 9999;
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
-  background: rgba(14,26,43,.72);
-  border: 1.5px solid rgba(255,255,255,.18);
-  color: #fff;
-  font-size: 18px;
+  bottom: 20px;
+  right: 20px;
+  z-index: 99999;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  background: rgba(14,26,43,.75);
+  border: 1.5px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.85);
+  font-size: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   opacity: 0;
-  transition: opacity .2s;
+  transition: opacity .25s, transform .2s;
   user-select: none;
 }
-body:hover #fs-btn,
-#fs-btn:focus { opacity: 1; }
-:fullscreen #fs-btn,
-:-webkit-full-screen #fs-btn { opacity: 0; }
-:fullscreen #fs-btn:hover,
-:-webkit-full-screen #fs-btn:hover { opacity: 1; }
+body:hover #fs-btn { opacity: 1; }
+#fs-btn:hover { transform: scale(1.08); opacity: 1 !important; }
+#fs-btn:active { transform: scale(.96); }
 </style>
 
+<div id="fs-curtain"></div>
 <button id="fs-btn" title="全屏 (F)">⛶</button>
 
 <script>
 (function () {
+  var curtain = document.getElementById('fs-curtain');
+  var btn     = document.getElementById('fs-btn');
+  var FADE    = 380; // ms — 与 CSS transition 对齐
+
   function enterFS() {
     var el = document.documentElement;
     var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-    if (fn) fn.call(el).catch(function(){});
+    return fn ? fn.call(el) : Promise.resolve();
   }
   function exitFS() {
     var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-    if (fn) fn.call(document).catch(function(){});
+    return fn ? fn.call(document) : Promise.resolve();
   }
   function isFS() {
     return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
   }
-  function toggle() { isFS() ? exitFS() : enterFS(); }
 
-  // 按钮点击
-  document.getElementById('fs-btn').addEventListener('click', function (e) {
-    e.stopPropagation();
-    toggle();
-  });
+  function toggle() {
+    // 先渐黑
+    curtain.classList.add('show');
+    setTimeout(function () {
+      var p = isFS() ? exitFS() : enterFS();
+      (p || Promise.resolve()).catch(function(){}).finally(function () {
+        // 稍等浏览器完成全屏切换，再渐亮
+        setTimeout(function () {
+          curtain.classList.remove('show');
+        }, 80);
+      });
+    }, FADE);
+  }
 
-  // F 键 / Escape 键（document 级，优先于组件）
+  btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
+
   document.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'f' || e.key === 'F') { e.stopImmediatePropagation(); toggle(); }
-    if (e.key === 'Escape' && isFS()) { e.stopImmediatePropagation(); exitFS(); }
-  }, true); // capture 阶段，比 deck-stage 的 window 监听更早
+    if (e.key === 'Escape' && isFS()) { e.stopImmediatePropagation(); toggle(); }
+  }, true);
 
-  // 全屏状态同步按钮图标
-  function syncIcon() {
-    document.getElementById('fs-btn').textContent = isFS() ? '✕' : '⛶';
+  function syncBtn() {
+    btn.textContent = isFS() ? '⊠' : '⛶';
+    btn.title = isFS() ? '退出全屏 (F)' : '全屏 (F)';
   }
-  document.addEventListener('fullscreenchange', syncIcon);
-  document.addEventListener('webkitfullscreenchange', syncIcon);
+  document.addEventListener('fullscreenchange', syncBtn);
+  document.addEventListener('webkitfullscreenchange', syncBtn);
 })();
 </script>
 </body>

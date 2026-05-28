@@ -2543,55 +2543,25 @@ image-slot{display:block;}
 <script src="image-slot.js"></script>
 <script src="deck-stage.js"></script>
 
-<!-- ── 独立全屏控制 · 丝滑渐入渐出 ──────────────────────────────────── -->
+<!-- ── 全屏渐入渐出（无角落按钮，F 键触发）──────────────────────────── -->
 <style>
-/* 黑色过渡遮罩 */
 #fs-curtain {
   position: fixed;
   inset: 0;
   background: #000;
-  z-index: 99998;
+  z-index: 99999;
   opacity: 0;
   pointer-events: none;
-  transition: opacity .38s cubic-bezier(.4,0,.2,1);
+  transition: opacity .32s cubic-bezier(.4,0,.2,1);
 }
-#fs-curtain.show { opacity: 1; pointer-events: auto; }
-
-/* 全屏按钮 */
-#fs-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 99999;
-  width: 46px;
-  height: 46px;
-  border-radius: 8px;
-  background: rgba(14,26,43,.75);
-  border: 1.5px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.85);
-  font-size: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(8px);
-  opacity: 0;
-  transition: opacity .25s, transform .2s;
-  user-select: none;
-}
-body:hover #fs-btn { opacity: 1; }
-#fs-btn:hover { transform: scale(1.08); opacity: 1 !important; }
-#fs-btn:active { transform: scale(.96); }
+#fs-curtain.show  { opacity: 1; }
+#fs-curtain.clear { opacity: 0; }
 </style>
-
 <div id="fs-curtain"></div>
-<button id="fs-btn" title="全屏 (F)">⛶</button>
 
 <script>
 (function () {
   var curtain = document.getElementById('fs-curtain');
-  var btn     = document.getElementById('fs-btn');
-  var FADE    = 380; // ms — 与 CSS transition 对齐
 
   function enterFS() {
     var el = document.documentElement;
@@ -2607,33 +2577,31 @@ body:hover #fs-btn { opacity: 1; }
   }
 
   function toggle() {
-    // 先渐黑
-    curtain.classList.add('show');
-    setTimeout(function () {
-      var p = isFS() ? exitFS() : enterFS();
-      (p || Promise.resolve()).catch(function(){}).finally(function () {
-        // 稍等浏览器完成全屏切换，再渐亮
-        setTimeout(function () {
-          curtain.classList.remove('show');
-        }, 80);
-      });
-    }, FADE);
+    // ① 立刻调用 requestFullscreen（在用户手势窗口内）
+    var p = isFS() ? exitFS() : enterFS();
+
+    // ② 同步开始渐黑
+    curtain.style.transition = 'opacity .32s cubic-bezier(.4,0,.2,1)';
+    curtain.style.opacity = '1';
+    curtain.style.pointerEvents = 'auto';
+
+    // ③ 全屏切换完成后渐亮
+    (p || Promise.resolve()).catch(function(){}).finally(function () {
+      setTimeout(function () {
+        curtain.style.opacity = '0';
+        curtain.style.pointerEvents = 'none';
+      }, 120);
+    });
   }
 
-  btn.addEventListener('click', function (e) { e.stopPropagation(); toggle(); });
-
+  // F 键 — capture 阶段，优先于 deck-stage 的 window 监听
   document.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    if (e.key === 'f' || e.key === 'F') { e.stopImmediatePropagation(); toggle(); }
-    if (e.key === 'Escape' && isFS()) { e.stopImmediatePropagation(); toggle(); }
+    if (e.key === 'f' || e.key === 'F') {
+      e.stopImmediatePropagation();
+      toggle();
+    }
   }, true);
-
-  function syncBtn() {
-    btn.textContent = isFS() ? '⊠' : '⛶';
-    btn.title = isFS() ? '退出全屏 (F)' : '全屏 (F)';
-  }
-  document.addEventListener('fullscreenchange', syncBtn);
-  document.addEventListener('webkitfullscreenchange', syncBtn);
 })();
 </script>
 </body>

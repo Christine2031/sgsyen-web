@@ -138,17 +138,11 @@ export default function ResearchPage() {
     });
   }, []);
 
-  // ── fetch categories + tags (unified filter set) ─────────
+  // ── fetch categories only (筛选条只放分类，tags 在行内) ──
   useEffect(() => {
-    research.from('articles').select('category,tags').eq('is_published', true)
+    research.from('articles').select('category').eq('is_published', true)
       .then(({ data }) => {
-        if (!data) return;
-        const set = new Set<string>();
-        data.forEach(d => {
-          if (d.category) set.add(d.category);
-          if (Array.isArray(d.tags)) d.tags.forEach((t: string) => t && set.add(t));
-        });
-        setCategories([...set]);
+        if (data) setCategories([...new Set(data.map(d => d.category).filter(Boolean))]);
       });
   }, []);
 

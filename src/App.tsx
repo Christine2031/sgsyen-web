@@ -5,6 +5,7 @@ import ModelPricingTable from './components/ModelPricingTable';
 import CostCalculator from './components/CostCalculator';
 import InsightArticles from './components/InsightArticles';
 import SgsyenPortal from './components/sgsyen/SgsyenPortal';
+import MiaojiePortal from './components/miaojie/MiaojiePortal';
 import { Calculator, FileText, Layers, RefreshCw } from 'lucide-react';
 import { LocaleProvider, useLocale } from './context/LocaleContext';
 
@@ -15,7 +16,7 @@ function InnerApp() {
 
   // Derive active state from URL path
   const path = location.pathname;
-  const activeApp = path.startsWith('/gemini') ? 'gemini' : 'sgsyen';
+  const activeApp = path.startsWith('/gemini') ? 'gemini' : path.startsWith('/miaojie') ? 'miaojie' : 'sgsyen';
   let activeTab: 'calculator' | 'articles' | 'tariffs' = 'calculator';
   if (path.includes('/pricing')) activeTab = 'tariffs';
   else if (path.includes('/analysis')) activeTab = 'articles';
@@ -48,6 +49,10 @@ function InnerApp() {
       document.title = `${tabNames[activeTab]} | ${geminiPrefix} | ${baseTitle}`;
     }
   }, [path, locale]);
+
+  if (activeApp === 'miaojie') {
+    return <MiaojiePortal />;
+  }
 
   return (
     <div className="w-full bg-[#FDFCF9] text-[#1D1D1B] font-serif min-h-screen flex flex-col overflow-x-hidden antialiased">

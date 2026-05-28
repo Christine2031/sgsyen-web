@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ArrowRight, ArrowLeft, Calendar, Tag, Globe,
   ChevronDown, Loader2, Clock, Star, Search, X, Terminal, Copy, Check,
+  FileText, Download, Lock,
 } from 'lucide-react';
 import { research, Article, PolicyEvent, MacroPoint } from '../lib/research';
+import { supabase } from '../lib/supabase';
 import { useLocale } from '../context/LocaleContext';
 
 const PAGE_SIZE = 8;
@@ -72,6 +74,35 @@ export default function ResearchPage() {
   const [search,       setSearch]       = useState('');
   const [showApi,      setShowApi]      = useState(false);
   const [copied,       setCopied]       = useState<string | null>(null);
+
+  // article drawer
+  const [selectedArt,  setSelectedArt]  = useState<Article | null>(null);
+  const [downloading,  setDownloading]  = useState(false);
+  const [dlMsg,        setDlMsg]        = useState<string | null>(null);
+  const { authorizedEmail, setShowLoginModal } = useLocale();
+  const isMember = !!authorizedEmail;
+
+  const handleDownload = async (slug: string) => {
+    if (!isMember) { setShowLoginModal(true); return; }
+    setDownloading(true); setDlMsg(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { setShowLoginModal(true); setDownloading(false); return; }
+      const res = await fetch(
+        `https://sgsyen-api-ocjwdme54q-de.a.run.app/reports/${slug}/download`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { url } = await res.json();
+      const a = document.createElement('a'); a.href = url;
+      a.download = `SGSYEN_${slug}.pdf`; a.target = '_blank';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setDlMsg(isZh ? '🎉 PDF 已通过 GCS 安全通道送达。' : '🎉 PDF delivered via secure GCS channel.');
+    } catch (err: any) {
+      setDlMsg(isZh ? `⚠️ 下载失败：${err.message}` : `⚠️ Failed: ${err.message}`);
+    } finally { setDownloading(false); }
+  };
 
   // debounce search
   useEffect(() => {
@@ -412,7 +443,7 @@ export default function ResearchPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  onClick={() => navigate(`/research/${art.slug}`)}
+                  onClick={() => { setSelectedArt(art); setDlMsg(null); }}
                   className="group flex flex-col md:flex-row gap-6 md:gap-8 py-10 border-b border-[#1D1D1B]/10 hover:bg-[#FAF9F5] transition-all duration-300 px-4 cursor-pointer"
                 >
                   {/* Serial number column */}
@@ -526,6 +557,136 @@ export default function ResearchPage() {
           </div>
         </footer>
       </div>
+
+      {/* ── 文章阅读抽屉 ─────────────────────────────────── */}
+      <AnimatePresence>
+        {selectedArt && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/55 backdrop-blur-md z-[600] flex justify-end"
+            onClick={() => setSelectedArt(null)}
+          >
+            <motion.div
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.45, ease: 'easeOut' }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-[850px] bg-[#FDFCF9] h-screen shadow-2xl flex flex-col overflow-hidden"
+            >
+              {/* Drawer header */}
+              <div className="px-8 md:px-10 py-5 border-b border-[#1D1D1B]/10 flex justify-between items-center bg-[#FAF9F5]">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-[#C4A35A]" />
+                  <span className="text-[10px] uppercase font-sans font-bold tracking-widest text-stone-500">
+                    {isZh ? 'SGSYEN 雍彻评论 · 研究档案' : 'SGSYEN REVIEW · Research Archive'}
+                  </span>
+                </div>
+                <button onClick={() => setSelectedArt(null)} className="p-1.5 hover:bg-stone-200/50 rounded-full text-stone-500 cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto px-8 md:px-12 py-10">
+                <div className="max-w-[680px] mx-auto">
+                  {/* Category + tags */}
+                  <div className="flex flex-wrap items-center gap-2 mb-6">
+                    {selectedArt.category && (
+                      <span className="text-[9px] uppercase font-sans font-bold text-[#C83E3E] bg-[#C83E3E]/5 border border-[#C83E3E]/10 px-2.5 py-0.5 rounded">
+                        {selectedArt.category}
+                      </span>
+                    )}
+                    {selectedArt.tags?.map(t => (
+                      <span key={t} className="text-[9px] font-sans text-[#A58261] bg-[#A58261]/5 border border-[#A58261]/15 px-2 py-0.5 rounded">{t}</span>
+                    ))}
+                    <span className="text-stone-400 text-xs font-sans flex items-center gap-1 ml-1">
+                      <Calendar className="w-3.5 h-3.5" />{fmtDate(selectedArt.published_at)}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h1 className="text-2xl md:text-3xl font-serif font-black leading-[1.3] text-[#1D1D1B] mb-2"
+                    style={{ fontFamily: '"Playfair Display", Georgia, serif' }}>
+                    {isZh ? selectedArt.title : (selectedArt.title_en || selectedArt.title)}
+                  </h1>
+                  {(selectedArt.subtitle || selectedArt.subtitle_en) && (
+                    <p className="text-[#A58261] font-sans font-light leading-relaxed mb-6 text-sm">
+                      {isZh ? selectedArt.subtitle : (selectedArt.subtitle_en || selectedArt.subtitle)}
+                    </p>
+                  )}
+                  {selectedArt.author && (
+                    <div className="text-[10px] font-sans uppercase tracking-widest text-stone-400 mb-8">
+                      {isZh ? selectedArt.author : (selectedArt.author_en || selectedArt.author)}
+                    </div>
+                  )}
+
+                  <hr className="border-[#1D1D1B]/10 mb-8" />
+
+                  {/* Summary callout */}
+                  {(selectedArt as any).summary && (
+                    <div className="p-5 border-l-4 border-[#C4A35A] bg-[#FAF9F5] mb-8">
+                      <p className="text-[10px] font-sans tracking-widest font-bold text-[#A58261] uppercase mb-2">
+                        {isZh ? '研究摘要' : 'EXECUTIVE SUMMARY'}
+                      </p>
+                      <p className="text-xs font-sans leading-relaxed text-stone-600 italic">{(selectedArt as any).summary}</p>
+                    </div>
+                  )}
+
+                  {/* Content or placeholder */}
+                  {(selectedArt as any).content ? (
+                    <div className="text-sm font-sans leading-[1.9] text-stone-700 whitespace-pre-wrap">
+                      {(selectedArt as any).content}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center bg-[#FAF9F5] border border-[#1D1D1B]/8 rounded">
+                      <Lock className="w-6 h-6 text-stone-300 mx-auto mb-3" />
+                      <p className="text-xs text-stone-400 font-sans">
+                        {isZh ? '完整正文内容即将上线，敬请期待。' : 'Full report content coming soon.'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* PDF download footer */}
+              <div className="border-t border-[#1D1D1B]/10 px-8 md:px-12 py-6 bg-[#FAF9F5]">
+                <div className="max-w-[680px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h4 className="text-xs font-serif font-bold text-[#1D1D1B] flex items-center gap-1.5 mb-1">
+                      <Lock className="w-3.5 h-3.5 text-[#C4A35A]" />
+                      {isZh ? '会员专属 PDF 完整报告下载' : 'Member PDF Download'}
+                    </h4>
+                    <p className="text-[10px] text-stone-400 font-sans">
+                      {isZh ? '认购会员登录后可获取 GCS 安全通道原件印本。' : 'Sign in as a subscriber to download via secure GCS.'}
+                    </p>
+                  </div>
+                  {!isMember ? (
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="px-4 py-2 text-[10px] font-bold font-sans tracking-widest uppercase border border-[#A58261]/30 text-[#A58261] hover:bg-[#A58261] hover:text-white transition-colors rounded cursor-pointer shrink-0"
+                    >
+                      🔑 {isZh ? '会员登录' : 'Sign In'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleDownload(selectedArt.slug)}
+                      disabled={downloading}
+                      className="flex items-center gap-2 px-5 py-2 bg-[#1D1D1B] text-[#FDFCF9] text-[10px] font-bold font-sans tracking-widest uppercase hover:bg-[#C4A35A] transition-colors rounded cursor-pointer disabled:opacity-40 shrink-0"
+                    >
+                      {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      {isZh ? '下载 PDF' : 'Download PDF'}
+                    </button>
+                  )}
+                </div>
+                {dlMsg && (
+                  <div className="max-w-[680px] mx-auto mt-3 text-xs font-sans text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+                    {dlMsg}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── API 接入文档抽屉 ──────────────────────────────── */}
       <AnimatePresence>

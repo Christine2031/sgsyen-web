@@ -42,11 +42,7 @@ function getCalendarLabel(date: Date): string {
     const solar = Solar.fromDate(date);
     const lunar  = solar.getLunar();
 
-    // 1. Exact solar term today
-    const jieqi = lunar.getJieQi();
-    if (jieqi) return jieqi;
-
-    // 2. Festival (lunar or solar)
+    // 1. Festival (节日) — highest priority
     const fests = [
       ...(lunar.getFestivals()      || []),
       ...(lunar.getOtherFestivals() || []),
@@ -55,16 +51,12 @@ function getCalendarLabel(date: Date): string {
     ];
     if (fests.length > 0) return fests[0];
 
-    // 3. Current solar term period — scan backwards ≤15 days
-    for (let i = 1; i <= 15; i++) {
-      const d = new Date(date);
-      d.setDate(d.getDate() - i);
-      const jq = Solar.fromDate(d).getLunar().getJieQi();
-      if (jq) return jq;
-    }
+    // 2. Solar term (节气) — exact day only
+    const jieqi = lunar.getJieQi();
+    if (jieqi) return jieqi;
 
-    // 4. Lunar date
-    return lunar.getMonthInChinese() + '月' + lunar.getDayInChinese();
+    // 3. Lunar day — 初几
+    return lunar.getDayInChinese();
   } catch {
     return '';
   }

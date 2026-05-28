@@ -2576,22 +2576,25 @@ image-slot{display:block;}
     return !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
   }
 
-  function toggle() {
-    // ① 立刻调用 requestFullscreen（在用户手势窗口内）
-    var p = isFS() ? exitFS() : enterFS();
+  var FADE_IN  = 320;  // curtain 渐黑时长（与 CSS 对齐）
+  var HOLD     = 60;   // 全黑停留，给浏览器完成全屏切换
+  var FADE_OUT = 360;  // curtain 渐亮时长
 
-    // ② 同步开始渐黑
-    curtain.style.transition = 'opacity .32s cubic-bezier(.4,0,.2,1)';
-    curtain.style.opacity = '1';
+  function toggle() {
+    // ① 在用户手势窗口内立刻触发全屏（不能延迟）
+    isFS() ? exitFS() : enterFS();
+
+    // ② 渐黑
+    curtain.style.transition = 'opacity ' + (FADE_IN/1000) + 's cubic-bezier(.4,0,.2,1)';
+    curtain.style.opacity    = '1';
     curtain.style.pointerEvents = 'auto';
 
-    // ③ 全屏切换完成后渐亮
-    (p || Promise.resolve()).catch(function(){}).finally(function () {
-      setTimeout(function () {
-        curtain.style.opacity = '0';
-        curtain.style.pointerEvents = 'none';
-      }, 120);
-    });
+    // ③ 等渐黑完成 + 短暂停留后渐亮（固定时序，不依赖 Promise 快慢）
+    setTimeout(function () {
+      curtain.style.transition    = 'opacity ' + (FADE_OUT/1000) + 's cubic-bezier(.4,0,.2,1)';
+      curtain.style.opacity       = '0';
+      curtain.style.pointerEvents = 'none';
+    }, FADE_IN + HOLD);
   }
 
   // F 键 — capture 阶段，优先于 deck-stage 的 window 监听

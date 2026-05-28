@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Solar } from 'lunar-typescript';
 import { research, MacroPoint } from '../../lib/research';
 import { useLocale } from '../../context/LocaleContext';
 
@@ -27,14 +28,81 @@ function fmtVal(v: number, unit: string) {
   return v.toFixed(2);
 }
 
+// ── Lunar / calendar helpers ─────────────────────────────────
+
+/**
+ * Returns the calendar label for a given date with this priority:
+ *   1. Solar term name (节气) if today IS one  — e.g. 小满
+ *   2. Festival name (节日)                     — e.g. 端午节
+ *   3. Current solar term period (look back ≤15d) — e.g. 小满
+ *   4. Lunar date fallback                      — e.g. 四月十三
+ */
+function getCalendarLabel(date: Date): string {
+  try {
+    const solar = Solar.fromDate(date);
+    const lunar  = solar.getLunar();
+
+    // 1. Exact solar term today
+    const jieqi = lunar.getJieQi();
+    if (jieqi) return jieqi;
+
+    // 2. Festival (lunar or solar)
+    const fests = [
+      ...(lunar.getFestivals()      || []),
+      ...(lunar.getOtherFestivals() || []),
+      ...(solar.getFestivals()      || []),
+      ...(solar.getOtherFestivals() || []),
+    ];
+    if (fests.length > 0) return fests[0];
+
+    // 3. Current solar term period — scan backwards ≤15 days
+    for (let i = 1; i <= 15; i++) {
+      const d = new Date(date);
+      d.setDate(d.getDate() - i);
+      const jq = Solar.fromDate(d).getLunar().getJieQi();
+      if (jq) return jq;
+    }
+
+    // 4. Lunar date
+    return lunar.getMonthInChinese() + '月' + lunar.getDayInChinese();
+  } catch {
+    return '';
+  }
+}
+
+/** Formats like macOS menu bar:  Fri  May 29  3:47 PM */
+function fmtClock(date: Date) {
+  const weekday = new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+  const monthDay = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
+  const time = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  }).format(date);
+  return { weekday, monthDay, time };
+}
+
+// ── Component ────────────────────────────────────────────────
 export default function MacroPulseBar() {
   const { locale } = useLocale();
   const isZh = locale === 'zh';
 
   const [macro,      setMacro]      = useState<Record<string, MacroPoint>>({});
   const [macLoading, setMacLoading] = useState(true);
+  const [now,        setNow]        = useState(new Date());
+  const [calendar,   setCalendar]   = useState('');
 
-  // ── fetch latest value for each series ───────────────────
+  // ── live clock — updates every minute ───────────────────
+  useEffect(() => {
+    setCalendar(getCalendarLabel(new Date()));
+    const tick = setInterval(() => {
+      const d = new Date();
+      setNow(d);
+      // Recalculate calendar label only once a day is fine, but cheap enough per minute
+      setCalendar(getCalendarLabel(d));
+    }, 60_000);
+    return () => clearInterval(tick);
+  }, []);
+
+  // ── fetch latest macro values ────────────────────────────
   useEffect(() => {
     Promise.all(
       MACRO_CARDS.map(c =>
@@ -53,17 +121,18 @@ export default function MacroPulseBar() {
     });
   }, []);
 
-  // Duplicate the cards array for a seamless infinite loop
   const doubled = [...MACRO_CARDS, ...MACRO_CARDS];
+  const { weekday, monthDay, time } = fmtClock(now);
 
   return (
     <div
-      className="w-full overflow-hidden select-none border-b border-white/5"
+      className="w-full overflow-hidden select-none"
       style={{ background: '#111110' }}
     >
-      <div className="flex items-stretch">
+      {/* ── Row 1: Scrolling price ticker ───────────────── */}
+      <div className="flex items-stretch border-b border-white/5">
 
-        {/* Gold label badge */}
+        {/* Gold label */}
         <div
           className="shrink-0 flex items-center px-4 py-2.5 z-10"
           style={{ background: '#C4A35A' }}
@@ -105,6 +174,34 @@ export default function MacroPulseBar() {
             })}
           </div>
         </div>
+      </div>
+
+      {/* ── Row 2: Clock + calendar strip ───────────────── */}
+      <div
+        className="flex items-center px-4 py-1.5 gap-3 border-b border-white/5"
+        style={{ background: '#0e0e0c' }}
+      >
+        {/* macOS-style clock */}
+        <span className="text-[11px] font-mono text-white/50 tracking-wide">
+          {weekday}
+        </span>
+        <span className="text-[11px] font-mono text-white/70 tracking-wide">
+          {monthDay}
+        </span>
+        <span className="text-[11px] font-mono text-white/50 tracking-wide">
+          {time}
+        </span>
+
+        {/* Divider */}
+        {calendar && (
+          <>
+            <span className="text-white/15 text-[10px]">·</span>
+            {/* Calendar label: solar term / festival / lunar date */}
+            <span className="text-[11px] font-sans text-[#C4A35A]/80 tracking-widest">
+              {calendar}
+            </span>
+          </>
+        )}
       </div>
 
       <style>{`

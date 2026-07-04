@@ -1,9 +1,9 @@
 {
   "schema": "sgsyen.system.performance.v1",
-  "updated_at": "2026-07-05T04:37:44+08:00",
+  "updated_at": "2026-07-05T04:54:33+08:00",
   "source": "DGWM quant_fast_run",
   "round_id": "sgsyen-2026-07-05",
-  "change_label": "daily-quant-run",
+  "change_label": "sgsyen-daily-2026-07-05",
   "hardware": {
     "cpu_name": "Intel(R) Core(TM) i9-14900KF",
     "cpu_logical_threads": 32,
@@ -21,29 +21,29 @@
   },
   "utilization_summary": {
     "round_id": "sgsyen-2026-07-05",
-    "change_label": "daily-quant-run",
-    "elapsed_seconds": 0.08250370000314433,
+    "change_label": "sgsyen-daily-2026-07-05",
+    "elapsed_seconds": 0.0925316000066232,
     "status": "gpu_below_target",
     "target_gpu_utilization_pct": 60.0,
     "gpu": {
       "available": true,
       "sample_count": 1,
-      "utilization_pct_mean": 32.0,
-      "utilization_pct_max": 32.0,
-      "target_gap_pct": 28.0,
-      "memory_used_gb_mean": 4.1494140625,
-      "memory_used_gb_max": 4.1494140625,
-      "power_watts_mean": 21.52,
-      "power_watts_max": 21.52
+      "utilization_pct_mean": 21.0,
+      "utilization_pct_max": 21.0,
+      "target_gap_pct": 39.0,
+      "memory_used_gb_mean": 4.083984375,
+      "memory_used_gb_max": 4.083984375,
+      "power_watts_mean": 21.79,
+      "power_watts_max": 21.79
     },
     "system": {
       "available": true,
       "sample_count": 1,
       "cpu_total_pct_mean": 0.0,
       "cpu_total_pct_max": 0.0,
-      "memory_used_pct_mean": 43.503414348236966,
-      "memory_used_pct_max": 43.503414348236966,
-      "memory_available_gb_min": 54.13359069824219
+      "memory_used_pct_mean": 39.20483863923563,
+      "memory_used_pct_max": 39.20483863923563,
+      "memory_available_gb_min": 58.252376556396484
     },
     "torch_engine": {
       "backend": "cuda",
@@ -78,7 +78,7 @@
           "accelerator_hit_rate": 1.0,
           "accelerator_time_share": 1.0,
           "accelerator_input_element_share": 1.0,
-          "total_seconds": 0.07074300001841038
+          "total_seconds": 0.0663329000090016
         }
       ]
     },

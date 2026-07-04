@@ -1,14 +1,14 @@
 {
   "schema": "sgsyen.quant.run.v1",
-  "run_date": "2026-07-05",
-  "generated_at": "2026-07-05T04:54:33+08:00",
+  "run_date": "2026-07-04",
+  "generated_at": "2026-07-05T05:01:40+08:00",
   "source": {
     "quant_comparison": "/quant/latest-comparison.json",
     "performance_report": "/system/performance/latest.json"
   },
   "workload": {
     "name": "沪深300 + 中证500 完整 validation",
-    "snapshot_date": "2026-07-05",
+    "snapshot_date": "2026-07-04",
     "comparison_refs": [
       "High-Flyer",
       "AQR QMNIX"

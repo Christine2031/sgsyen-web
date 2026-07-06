@@ -1,7 +1,7 @@
 {
   "latest": {
     "date": "2026-07-06",
-    "generated_at": "2026-07-05T22:11:22.230920+00:00",
+    "generated_at": "2026-07-06T13:32:29.673436+00:00",
     "path": "/quant/history/2026-07-06.json",
     "indices": [
       "csi500",
@@ -11,7 +11,7 @@
   "items": [
     {
       "date": "2026-07-06",
-      "generated_at": "2026-07-05T22:11:22.230920+00:00",
+      "generated_at": "2026-07-06T13:32:29.673436+00:00",
       "path": "/quant/history/2026-07-06.json",
       "indices": [
         "csi500",

@@ -1,89 +1,23 @@
 {
   "schema": "sgsyen.system.performance.v1",
-  "updated_at": "2026-07-07T22:57:45+08:00",
-  "source": "DGWM quant_fast_run",
-  "round_id": "sgsyen-2026-07-07",
-  "change_label": "sgsyen-daily-2026-07-07",
+  "updated_at": "2026-07-08T14:34:23+08:00",
+  "source": "DGWM quant_hs300_csi500_weekly_e2e",
+  "round_id": "sgsyen-2026-07-08",
+  "change_label": "sgsyen-daily-2026-07-08",
   "hardware": {
-    "cpu_name": "Intel(R) Core(TM) i9-14900KF",
-    "cpu_logical_threads": 32,
-    "cpu_worker_threads": 28,
-    "memory_gb": 95.81745529174805,
-    "gpu_name": "NVIDIA GeForce RTX 4070 Ti SUPER",
-    "gpu_memory_gb": 15.9921875,
-    "gpu_count": 1,
-    "gpu_driver_version": "595.79",
-    "cuda_version": "13.2",
-    "gpu_compute_capability": "8.9",
-    "platform_system": "Windows",
-    "platform_machine": "AMD64",
-    "accelerator_family": "nvidia-cuda"
+    "cpu_name": "Intel Core i9-14900KF",
+    "cpu_logical_threads": null,
+    "cpu_worker_threads": null,
+    "memory_gb": null,
+    "gpu_name": null,
+    "gpu_memory_gb": null,
+    "gpu_count": null,
+    "gpu_driver_version": null,
+    "cuda_version": null,
+    "gpu_compute_capability": null,
+    "platform_system": null,
+    "platform_machine": null,
+    "accelerator_family": "cpu"
   },
-  "utilization_summary": {
-    "round_id": "sgsyen-2026-07-07",
-    "change_label": "sgsyen-daily-2026-07-07",
-    "elapsed_seconds": null,
-    "status": "gpu_below_target",
-    "target_gpu_utilization_pct": 60.0,
-    "gpu": {
-      "available": false,
-      "sample_count": 0,
-      "utilization_pct_mean": 0.0,
-      "utilization_pct_max": 0.0,
-      "target_gap_pct": 60.0,
-      "memory_used_gb_mean": 0.0,
-      "memory_used_gb_max": 0.0,
-      "power_watts_mean": 0.0,
-      "power_watts_max": 0.0
-    },
-    "system": {
-      "available": false,
-      "sample_count": 0,
-      "cpu_total_pct_mean": 0.0,
-      "cpu_total_pct_max": 0.0,
-      "memory_used_pct_mean": 0.0,
-      "memory_used_pct_max": 0.0,
-      "memory_available_gb_min": 0.0
-    },
-    "torch_engine": {
-      "backend": "cuda",
-      "device": "cuda:0",
-      "device_name": "NVIDIA GeForce RTX 4070 Ti SUPER",
-      "dtype": "tf32",
-      "accelerated": true,
-      "cuda_device_count": 1,
-      "supports_tf32": true,
-      "supports_float64": true,
-      "num_threads": 24,
-      "interop_threads": 24
-    },
-    "accelerator": {
-      "backend": "cuda",
-      "calls": 2,
-      "accelerator_calls": 2,
-      "cuda_calls": 2,
-      "mps_calls": 0,
-      "fallback_calls": 0,
-      "accelerator_hit_rate": 1.0,
-      "accelerator_time_share": 1.0,
-      "accelerator_input_element_share": 1.0,
-      "accelerator_output_element_share": 1.0,
-      "operation_hotspots": [
-        {
-          "operation": "matmul",
-          "calls": 2,
-          "accelerator_calls": 2,
-          "cuda_calls": 2,
-          "mps_calls": 0,
-          "accelerator_hit_rate": 1.0,
-          "accelerator_time_share": 1.0,
-          "accelerator_input_element_share": 1.0,
-          "total_seconds": 0.07004809996578842
-        }
-      ]
-    },
-    "next_actions": [
-      "run_longer_workload_or_check_nvidia_smi_sampler"
-    ]
-  }
+  "utilization_summary": {}
 }

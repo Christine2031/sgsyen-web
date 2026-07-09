@@ -1,23 +1,44 @@
 {
   "schema": "sgsyen.system.performance.v1",
-  "updated_at": "2026-07-08T14:34:23+08:00",
+  "updated_at": "2026-07-09T22:57:29+08:00",
   "source": "DGWM quant_hs300_csi500_weekly_e2e",
-  "round_id": "sgsyen-2026-07-08",
-  "change_label": "sgsyen-daily-2026-07-08",
+  "round_id": "sgsyen-2026-07-09",
+  "change_label": "sgsyen-daily-2026-07-09",
   "hardware": {
     "cpu_name": "Intel Core i9-14900KF",
     "cpu_logical_threads": null,
     "cpu_worker_threads": null,
     "memory_gb": null,
-    "gpu_name": null,
+    "gpu_name": "NVIDIA GeForce RTX 4070 Ti SUPER",
     "gpu_memory_gb": null,
-    "gpu_count": null,
+    "gpu_count": 1,
     "gpu_driver_version": null,
     "cuda_version": null,
     "gpu_compute_capability": null,
-    "platform_system": null,
+    "platform_system": "Windows",
     "platform_machine": null,
-    "accelerator_family": "cpu"
+    "accelerator_family": "nvidia-cuda"
   },
-  "utilization_summary": {}
+  "utilization_summary": {
+    "elapsed_seconds": 713.2410727000097,
+    "target_gpu_utilization_pct": 60.0,
+    "gpu_available": true,
+    "gpu_backend": "cuda",
+    "gpu_utilization_pct_mean": 2.244186046511628,
+    "gpu_utilization_pct_max": 50.0,
+    "gpu_memory_used_mb_mean": 4461.296511627907,
+    "gpu_memory_used_mb_max": 4908.0,
+    "cpu_total_pct_mean": 18.29361664313114,
+    "cpu_total_pct_max": 79.71652003910069,
+    "memory_used_pct_mean": 60.9837000970884,
+    "memory_used_pct_max": 72.9634292515108,
+    "cuda_hit_rate": 0.008047423856093127,
+    "cuda_time_share": 0.16534163544863834,
+    "gpu_target_met": false,
+    "recommendations": [
+      "gpu_utilization_below_target_batch_more_control_validation_work",
+      "cuda_dispatches_exist_but_wall_time_dominated_by_python_or_io",
+      "optimize_top_profile:release.validation_stage"
+    ]
+  }
 }

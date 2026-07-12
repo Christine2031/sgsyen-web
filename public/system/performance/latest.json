@@ -1,9 +1,9 @@
 {
   "schema": "sgsyen.system.performance.v1",
-  "updated_at": "2026-07-11T21:50:37+08:00",
+  "updated_at": "2026-07-12T21:57:47+08:00",
   "source": "DGWM quant_fast_run",
-  "round_id": "sgsyen-2026-07-11",
-  "change_label": "sgsyen-daily-2026-07-11",
+  "round_id": "sgsyen-2026-07-12",
+  "change_label": "sgsyen-daily-2026-07-12",
   "hardware": {
     "cpu_name": "Intel(R) Core(TM) i9-14900KF",
     "cpu_logical_threads": 32,
@@ -20,30 +20,30 @@
     "accelerator_family": "nvidia-cuda"
   },
   "utilization_summary": {
-    "round_id": "sgsyen-2026-07-11",
-    "change_label": "sgsyen-daily-2026-07-11",
-    "elapsed_seconds": null,
+    "round_id": "sgsyen-2026-07-12",
+    "change_label": "sgsyen-daily-2026-07-12",
+    "elapsed_seconds": 0.10744890000205487,
     "status": "gpu_below_target",
     "target_gpu_utilization_pct": 60.0,
     "gpu": {
-      "available": false,
-      "sample_count": 0,
-      "utilization_pct_mean": 0.0,
-      "utilization_pct_max": 0.0,
-      "target_gap_pct": 60.0,
-      "memory_used_gb_mean": 0.0,
-      "memory_used_gb_max": 0.0,
-      "power_watts_mean": 0.0,
-      "power_watts_max": 0.0
+      "available": true,
+      "sample_count": 1,
+      "utilization_pct_mean": 3.0,
+      "utilization_pct_max": 3.0,
+      "target_gap_pct": 57.0,
+      "memory_used_gb_mean": 4.1669921875,
+      "memory_used_gb_max": 4.1669921875,
+      "power_watts_mean": 20.93,
+      "power_watts_max": 20.93
     },
     "system": {
-      "available": false,
-      "sample_count": 0,
+      "available": true,
+      "sample_count": 1,
       "cpu_total_pct_mean": 0.0,
       "cpu_total_pct_max": 0.0,
-      "memory_used_pct_mean": 0.0,
-      "memory_used_pct_max": 0.0,
-      "memory_available_gb_min": 0.0
+      "memory_used_pct_mean": 55.32410639378475,
+      "memory_used_pct_max": 55.32410639378475,
+      "memory_available_gb_min": 42.80730438232422
     },
     "torch_engine": {
       "backend": "cuda",
@@ -59,20 +59,31 @@
     },
     "accelerator": {
       "backend": "cuda",
-      "calls": 0,
-      "accelerator_calls": 0,
-      "cuda_calls": 0,
+      "calls": 2,
+      "accelerator_calls": 2,
+      "cuda_calls": 2,
       "mps_calls": 0,
       "fallback_calls": 0,
-      "accelerator_hit_rate": 0.0,
-      "accelerator_time_share": 0.0,
-      "accelerator_input_element_share": 0.0,
-      "accelerator_output_element_share": 0.0,
-      "operation_hotspots": []
+      "accelerator_hit_rate": 1.0,
+      "accelerator_time_share": 1.0,
+      "accelerator_input_element_share": 1.0,
+      "accelerator_output_element_share": 1.0,
+      "operation_hotspots": [
+        {
+          "operation": "matmul",
+          "calls": 2,
+          "accelerator_calls": 2,
+          "cuda_calls": 2,
+          "mps_calls": 0,
+          "accelerator_hit_rate": 1.0,
+          "accelerator_time_share": 1.0,
+          "accelerator_input_element_share": 1.0,
+          "total_seconds": 0.06891740008722991
+        }
+      ]
     },
     "next_actions": [
-      "run_longer_workload_or_check_nvidia_smi_sampler",
-      "move_more_hot_paths_to_torch_engine"
+      "increase_tensor_residency_and_batch_control_validation"
     ]
   }
 }

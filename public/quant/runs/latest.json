@@ -1,14 +1,14 @@
 {
   "schema": "sgsyen.quant.run.v1",
-  "run_date": "2026-07-13",
-  "generated_at": "2026-07-14T00:15:27+08:00",
+  "run_date": "2026-07-14",
+  "generated_at": "2026-07-14T23:31:58+08:00",
   "source": {
     "quant_comparison": "/quant/latest-comparison.json",
     "performance_report": "/system/performance/latest.json"
   },
   "workload": {
     "name": "沪深300 + 中证500 完整 validation",
-    "snapshot_date": "2026-07-13",
+    "snapshot_date": "2026-07-14",
     "comparison_refs": [
       "High-Flyer",
       "AQR QMNIX"
@@ -27,51 +27,51 @@
       "index_key": "hs300",
       "label": "沪深300",
       "start_date": "2026-01-09",
-      "end_date": "2026-07-13",
-      "trade_date": "2026-07-13",
-      "sample_count": 121,
-      "model_return_pct": 28.2100009207,
+      "end_date": "2026-07-14",
+      "trade_date": "2026-07-14",
+      "sample_count": 122,
+      "model_return_pct": 38.1449366392,
       "highflyer_return_pct": 16.0275216541,
-      "aqr_return_pct": -6.75345749693,
-      "model_drawdown_pct": -6.90426510184,
+      "aqr_return_pct": -6.26525229037,
+      "model_drawdown_pct": -5.30820246299,
       "highflyer_drawdown_pct": -4.77268818437,
-      "aqr_drawdown_pct": -6.75345749693,
-      "model_max_drawdown_pct": -6.904265101841878,
+      "aqr_drawdown_pct": -6.26525229037,
+      "model_max_drawdown_pct": -6.567244965036966,
       "highflyer_max_drawdown_pct": -8.542843311279658,
       "aqr_max_drawdown_pct": -8.0553276995043,
-      "model_annualized_return_pct": 63.27774673969016,
-      "highflyer_annualized_return_pct": 34.08405617487191,
-      "aqr_annualized_return_pct": -12.886349770724614,
-      "highflyer_excess_return_pct": 12.182479266606695,
-      "aqr_excess_return_pct": 34.96345841763301,
-      "highflyer_leading_rate_pct": 99.17355371900827,
+      "model_annualized_return_pct": 88.5334954227198,
+      "highflyer_annualized_return_pct": 33.87279046744052,
+      "aqr_annualized_return_pct": -11.923766661626212,
+      "highflyer_excess_return_pct": 22.117414985106688,
+      "aqr_excess_return_pct": 44.41018892957478,
+      "highflyer_leading_rate_pct": 99.18032786885246,
       "aqr_leading_rate_pct": 100.0,
       "beats_highflyer_return": true,
       "beats_highflyer_drawdown": false,
       "beats_aqr_return": true,
-      "beats_aqr_drawdown": false
+      "beats_aqr_drawdown": true
     },
     {
       "index_key": "csi500",
       "label": "中证500",
       "start_date": "2026-01-09",
-      "end_date": "2026-07-13",
-      "trade_date": "2026-07-13",
-      "sample_count": 121,
-      "model_return_pct": 51.5275411813,
+      "end_date": "2026-07-14",
+      "trade_date": "2026-07-14",
+      "sample_count": 122,
+      "model_return_pct": 51.6435185169,
       "highflyer_return_pct": 17.3088425399,
-      "aqr_return_pct": -6.75345749693,
-      "model_drawdown_pct": -6.97328550062,
+      "aqr_return_pct": -6.26525229037,
+      "model_drawdown_pct": -6.92910312496,
       "highflyer_drawdown_pct": -4.33482810164,
-      "aqr_drawdown_pct": -6.75345749693,
-      "model_max_drawdown_pct": -6.973285500620396,
+      "aqr_drawdown_pct": -6.26525229037,
+      "model_max_drawdown_pct": -6.973285500647897,
       "highflyer_max_drawdown_pct": -8.155889474433831,
       "aqr_max_drawdown_pct": -8.0553276995043,
-      "model_annualized_return_pct": 127.04137139709779,
-      "highflyer_annualized_return_pct": 37.02117752098864,
-      "aqr_annualized_return_pct": -12.886349770724614,
-      "highflyer_excess_return_pct": 34.218698641409205,
-      "aqr_excess_return_pct": 58.28099867823301,
+      "model_annualized_return_pct": 126.38232007717991,
+      "highflyer_annualized_return_pct": 36.78934742473008,
+      "aqr_annualized_return_pct": -11.923766661626212,
+      "highflyer_excess_return_pct": 34.33467597700921,
+      "aqr_excess_return_pct": 57.90877080727479,
       "highflyer_leading_rate_pct": 100.0,
       "aqr_leading_rate_pct": 100.0,
       "beats_highflyer_return": true,
@@ -81,9 +81,9 @@
     }
   ],
   "compute": {
-    "round_id": "sgsyen-2026-07-13",
-    "change_label": "sgsyen-daily-2026-07-13",
-    "updated_at": "2026-07-14T00:15:27+08:00",
+    "round_id": "sgsyen-2026-07-14",
+    "change_label": "sgsyen-daily-2026-07-14",
+    "updated_at": "2026-07-14T23:31:58+08:00",
     "hardware": {
       "cpu_name": "Intel(R) Core(TM) i9-14900KF",
       "cpu_logical_threads": 32,
@@ -100,8 +100,8 @@
       "accelerator_family": "nvidia-cuda"
     },
     "utilization_summary": {
-      "round_id": "sgsyen-2026-07-13",
-      "change_label": "sgsyen-daily-2026-07-13",
+      "round_id": "sgsyen-2026-07-14",
+      "change_label": "sgsyen-daily-2026-07-14",
       "elapsed_seconds": null,
       "status": "gpu_below_target",
       "target_gpu_utilization_pct": 60.0,
@@ -139,31 +139,20 @@
       },
       "accelerator": {
         "backend": "cuda",
-        "calls": 2,
-        "accelerator_calls": 2,
-        "cuda_calls": 2,
+        "calls": 0,
+        "accelerator_calls": 0,
+        "cuda_calls": 0,
         "mps_calls": 0,
         "fallback_calls": 0,
-        "accelerator_hit_rate": 1.0,
-        "accelerator_time_share": 1.0,
-        "accelerator_input_element_share": 1.0,
-        "accelerator_output_element_share": 1.0,
-        "operation_hotspots": [
-          {
-            "operation": "matmul",
-            "calls": 2,
-            "accelerator_calls": 2,
-            "cuda_calls": 2,
-            "mps_calls": 0,
-            "accelerator_hit_rate": 1.0,
-            "accelerator_time_share": 1.0,
-            "accelerator_input_element_share": 1.0,
-            "total_seconds": 0.04855700011830777
-          }
-        ]
+        "accelerator_hit_rate": 0.0,
+        "accelerator_time_share": 0.0,
+        "accelerator_input_element_share": 0.0,
+        "accelerator_output_element_share": 0.0,
+        "operation_hotspots": []
       },
       "next_actions": [
-        "run_longer_workload_or_check_nvidia_smi_sampler"
+        "run_longer_workload_or_check_nvidia_smi_sampler",
+        "move_more_hot_paths_to_torch_engine"
       ]
     }
   }

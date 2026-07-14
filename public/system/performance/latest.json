@@ -1,9 +1,9 @@
 {
   "schema": "sgsyen.system.performance.v1",
-  "updated_at": "2026-07-14T00:15:27+08:00",
+  "updated_at": "2026-07-14T23:31:58+08:00",
   "source": "DGWM quant_fast_run",
-  "round_id": "sgsyen-2026-07-13",
-  "change_label": "sgsyen-daily-2026-07-13",
+  "round_id": "sgsyen-2026-07-14",
+  "change_label": "sgsyen-daily-2026-07-14",
   "hardware": {
     "cpu_name": "Intel(R) Core(TM) i9-14900KF",
     "cpu_logical_threads": 32,
@@ -20,8 +20,8 @@
     "accelerator_family": "nvidia-cuda"
   },
   "utilization_summary": {
-    "round_id": "sgsyen-2026-07-13",
-    "change_label": "sgsyen-daily-2026-07-13",
+    "round_id": "sgsyen-2026-07-14",
+    "change_label": "sgsyen-daily-2026-07-14",
     "elapsed_seconds": null,
     "status": "gpu_below_target",
     "target_gpu_utilization_pct": 60.0,
@@ -59,31 +59,20 @@
     },
     "accelerator": {
       "backend": "cuda",
-      "calls": 2,
-      "accelerator_calls": 2,
-      "cuda_calls": 2,
+      "calls": 0,
+      "accelerator_calls": 0,
+      "cuda_calls": 0,
       "mps_calls": 0,
       "fallback_calls": 0,
-      "accelerator_hit_rate": 1.0,
-      "accelerator_time_share": 1.0,
-      "accelerator_input_element_share": 1.0,
-      "accelerator_output_element_share": 1.0,
-      "operation_hotspots": [
-        {
-          "operation": "matmul",
-          "calls": 2,
-          "accelerator_calls": 2,
-          "cuda_calls": 2,
-          "mps_calls": 0,
-          "accelerator_hit_rate": 1.0,
-          "accelerator_time_share": 1.0,
-          "accelerator_input_element_share": 1.0,
-          "total_seconds": 0.04855700011830777
-        }
-      ]
+      "accelerator_hit_rate": 0.0,
+      "accelerator_time_share": 0.0,
+      "accelerator_input_element_share": 0.0,
+      "accelerator_output_element_share": 0.0,
+      "operation_hotspots": []
     },
     "next_actions": [
-      "run_longer_workload_or_check_nvidia_smi_sampler"
+      "run_longer_workload_or_check_nvidia_smi_sampler",
+      "move_more_hot_paths_to_torch_engine"
     ]
   }
 }

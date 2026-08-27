@@ -1,184 +1,126 @@
-# SGSYEN 智库极精部署指南 (GCP Cloud Run & GitHub Actions)
+# SGSYEN 阿里云部署与回滚手册
 
-本指南针对您的两个项目进行配置：**前端展示网站 (`sgsyen-web`)** 和 **后端学术接口 (`sgsyen-api`)**。它们都将部署在 Google Cloud 容器引擎 **Cloud Run** 上，并绑定您的专属域名 **`soulshock.net`** 及 **`sgsyen.com`**。
+本文档描述 SGSYEN Web/API 从 GCP 迁移到阿里云的目标部署方式。它不授权
+创建付费资源、修改 DNS、停止 Cloud Run 或删除 GCS 数据。上述生产动作必须在
+数据校验、影子环境验收和用户确认后单独执行。
 
----
+## 目标边界
 
-## 🏛️ 架构简图
-```
-[ 🌎 终端用户 ] 
-      │ 
-      ├──► (soulshock.net / sgsyen.com) ──► [ 🚀 GCP Cloud Run Frontend (sgsyen-web) ]
-      │                                             │ (前端请求)
-      │                                             ▼
-      └──► (api.soulshock.net) ───────────► [ ⚡ GCP Cloud Run Backend (sgsyen-api) ]
-                                                    │
-                                                    ├──► [ 🗄️ Supabase Database (数据层) ]
-                                                    └──► [ 🪣 Google Cloud Storage (PDF刊物) ]
-```
+SGSYEN 属于 GSYEN 业务空间，部署在 `/srv/gsyen`，不使用 HalfSphere 的用户、
+端口、数据库凭据、OSS 前缀或备份目录：
 
----
-
-## 🛠️ 第一步：准备 GCP 基础凭证
-
-要在 GitHub 仓库中启用全自动 CI/CD 部署，您首先需要通过 [Google Cloud Console](https://console.cloud.google.com) 创建一个专属的**服务账号 (Service Account)**：
-
-1. **创建服务账号**：
-   - 前往 `IAM & Admin` -> `Service Accounts`。
-   - 创建账号命名为 `github-deployer`。
-2. **授予必要权限 (Role)**：
-   - 授予该服务账号以下三项核心角色：
-     * **Cloud Run Admin** (`roles/run.admin`) — 允许创建/更新容器实例。
-     * **Storage Admin** (`roles/storage.admin`) — 允许上传构建阶段生成的 Docker 镜像。
-     * **Service Account User** (`roles/iam.serviceAccountUser`) — 执行运行时关联。
-3. **导出 JSON 金钥密码**：
-   - 进入创建的账号，点击 `Keys` -> `Add Key` -> `Create New Key` -> 选择 **JSON** 格式并下载。
-   - 保留该 `.json` 凭证文件。
-
----
-
-## ⚡ 第二步：配置后端 API 部署 (`sgsyen-api`)
-
-后端基于 **Hono** 驱动，已在 `sgsyen-api` 文件夹下准备好 `Dockerfile`。我们将通过 GitHub Actions 在您每次提交代码时，自动构建并部署至 Cloud Run。
-
-### 1. 添加 GitHub Secrets
-前往您在 GitHub 上的后端仓库 `sgsyen-api` 的 `Settings` -> `Secrets and variables` -> `Actions`。点击 **New repository secret**，添加以下值：
-* `GCP_SA_KEY`：将刚才下载的 GCP 服务账号 **JSON 金钥的完整内容** 粘贴进去。
-* `GCP_PROJECT_ID`：输入您的 GCP 项目 ID (Project ID)。
-
-### 2. 创建 GitHub CI/CD 工作流文件
-在您的 `sgsyen-api` 项目根目录下，新建路径并创建文件 `.github/workflows/deploy.yml`（代码如下）：
-
-```yaml
-name: Deploy Backend to Cloud Run
-
-on:
-  push:
-    branches:
-      - main # 触发推送的分支
-
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: asia-east1 # 您可以自由选择算力节点，台湾节点较慢推荐香港/台湾
-  SERVICE_NAME: sgsyen-api
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-
-    - name: Configure Docker to use Auth
-      run: |
-        gcloud auth configure-docker --quiet
-
-    - name: Build and Push Docker Image
-      run: |
-        docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
-        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
-
-    - name: Deploy to Cloud Run
-      run: |
-        gcloud run deploy $SERVICE_NAME \
-          --image gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
-          --region $REGION \
-          --platform managed \
-          --allow-unauthenticated \
-          --port 3000 \
-          --set-env-vars="SUPABASE_URL=您的SUPABASE公网URL,SUPABASE_ANON_KEY=您的SUPABASE密钥,GCS_BUCKET_NAME=您的刊物桶名"
+```text
+用户 -> Caddy -> SGSYEN Web  127.0.0.1:18082
+              -> SGSYEN API  127.0.0.1:18084
+                                |-- PostgreSQL/Supabase（迁移期间保留）
+                                `-- OSS（目标对象存储）
 ```
 
----
+生产域名预期为 `soulshock.net`/`sgsyen.com` 和 `api.soulshock.net`。在正式切换
+窗口前，Caddy 候选配置必须使用独立的影子域名，且不得替换现有 DNS 记录。
 
-## 🚀 第三步：配置前端部署 (`sgsyen-web`)
+系统级模板、资源限制、备份和回滚约束统一位于仓库根目录的
+`deploy/aliyun/`。关键文件如下：
 
-前端在 Cloud Run 上作为高性能静态/SSR 节点运行，同样支持一键自动化。
+- `systemd/sgsyen-web.service`：Web，端口 `18082`；
+- `systemd/sgsyen-api.service`：API，端口 `18084`；
+- `env/sgsyen-*.env.example`：不含真实 Secret 的配置契约；
+- `caddy/gsyen.Caddyfile.template`：仅供渲染和审核的候选入口；
+- `install-foundation.sh`：默认只检查，应用前要求快照审批标记。
 
-### 1. 同步添加 GitHub Secrets
-进入前端 GitHub 仓库 `sgsyen-web` 的 `Settings` -> `Secrets`，添加相同的：
-* `GCP_SA_KEY` (GCP 服务账号 JSON 密码内容)
-* `GCP_PROJECT_ID` (您的 GCP 项目名称)
+## 构建
 
-### 2. 创建前端 CI/CD 工作流文件
-在 `sgsyen-web` 项目根目录下，创建文件 `.github/workflows/deploy.yml`：
+使用锁文件安装依赖，不在构建日志输出环境变量：
 
-```yaml
-name: Deploy Frontend to Cloud Run
+```sh
+cd sgsyen-api
+npm ci
+npm run typecheck
+npm test
+npm run build
 
-on:
-  push:
-    branches:
-      - main
-
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: asia-east1
-  SERVICE_NAME: sgsyen-web
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
-
-    - name: Configure Docker to use Auth
-      run: |
-        gcloud auth configure-docker --quiet
-
-    - name: Build and Push Docker Image
-      run: |
-        docker build -t gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA .
-        docker push gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
-
-    - name: Deploy to Cloud Run
-      run: |
-        gcloud run deploy $SERVICE_NAME \
-          --image gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA \
-          --region $REGION \
-          --platform managed \
-          --allow-unauthenticated \
-          --port 8080
+cd ../sgsyen-web
+npm ci
+npm test
+npm run typecheck
+npm run lint
+VITE_SGSYEN_API_URL=https://api-shadow.example.invalid npm run build
 ```
 
----
+`VITE_SGSYEN_API_URL` 会进入前端产物，只能放公开 HTTPS 地址，不能放 Token 或私网凭据。
+影子构建通过后，正式构建再使用经批准的 `https://api.soulshock.net`。
 
-## 🎯 第四步：将 `soulshock.net` / `sgsyen.com` 绑定至 GCP
+## 对象存储切换
 
-当您通过上述 GitHub Actions 将服务顺利部署到 Cloud Run 后，系统会为您的服务生成一个随机的默认域名（如 `https://sgsyen-web-xxx.run.app`）。此时需要将您的专属域名与该服务进行强关联。
+API 必须显式配置存储 provider：
 
-### 绑定步骤 (推荐最简方式)：
-1. 打开 [GCP Cloud Run 控制台](https://console.cloud.google.com/run)。
-2. 点击进入已经成功部署的 **`sgsyen-web`** 服务详情。
-3. 在顶部导航栏，点击 **`MANAGE CUSTOM DOMAINS`** (管理自定义网域)。
-4. 点击 **`ADD MAPPING`**：
-   - 选择服务为：`sgsyen-web`。
-   - 输入您持有的域名：**`soulshock.net`** (或者 **`sgsyen.com`**)。
-5. 系统在校验所有权后会提供一个 **`CNAME`** 或 **`A`** 记录解析清单组。
-6. **在域名解析商处配置 DNS**：
-   - 登录您的域名托管商（如 GoDaddy、Cloudflare 等）。
-   - 添加一条 CNAME 记录挂载到 Google Cloud 为您生成的边缘地址（比如 `ghs.googlehosted.com`）。
-   - 保存后，Google Cloud 会自动为您免费签发并续期高性能的 **SSL 证书 (HTTPS)**。
+```dotenv
+OBJECT_STORAGE_PROVIDER=oss
+OSS_AUTH_MODE=ecs_ram_role
+OSS_REGION=oss-cn-beijing
+OSS_BUCKET=__REQUIRED__
+OSS_ENDPOINT=https://oss-cn-beijing-internal.aliyuncs.com
+OSS_PUBLIC_ENDPOINT=https://oss-cn-beijing.aliyuncs.com
+OSS_RAM_ROLE=__REQUIRED__
+```
 
----
+生产强制使用独立 ECS RAM Role 与 IMDSv2 临时 STS 凭证，不把长期 AccessKey
+写入 Git、镜像或环境文件。服务端正文读取走北京内网 endpoint；发给浏览器的
+V4 签名下载 URL 必须走公网 endpoint。OSS bucket、RAM Role 和最小权限策略尚未
+创建时，不得启用该服务。`gcs` provider 只在数据切换和回滚观察期保留；完成
+GCP-off 验证后再移除其依赖。
 
-## 🛡️ 系统安全优势回顾
-* **全自动极速交付**：您在本地编辑代码后，只需 `git push origin main` 推送，GitHub 就会在一分钟内完成编译、安全性封装并启动 Cloud Run 蓝绿灰度无缝替换。
-* **Google GCS 文件瞬时防御**：SGSYEN 报告下载使用 **10 分钟临时签名的 Signed URL 安全路径**。该机制完全防范了直接向公网裸露 PDF 文件带来的数据泄漏风控，契和商业咨询一等密级的防护契约。
+切换前至少校验：对象总数、总字节数、每个对象键和 SHA-256、报告元数据与对象
+映射、签名 URL 的权限/有效期，以及中文文件名和下载响应头。
+
+## ECS 影子部署
+
+在已有 ECS 上首次应用基础模板前，必须有已核验的云盘快照和文件级备份。先在
+本地或候选主机执行只读检查：
+
+```sh
+bash deploy/aliyun/tests/validate-templates.sh
+bash deploy/aliyun/install-foundation.sh --check
+```
+
+生产主机上的 `--apply`、systemd unit 启用、Caddy import/reload 均是独立变更，
+不得由构建任务自动触发。应用目录和环境文件分别为：
+
+```text
+/srv/gsyen/apps/sgsyen-web/current
+/srv/gsyen/apps/sgsyen-api/current
+/srv/gsyen/config/sgsyen-web.env
+/srv/gsyen/config/sgsyen-api.env
+```
+
+每个 app 的实际 payload 位于 `releases/<release-id>`，并由 root-only 的
+stage/promote 哈希审批标记原子切换 `current`；命令和单服务回滚流程见
+`deploy/aliyun/README.md`。不得用覆盖式复制更新 `current` 指向的 release。
+
+真实环境文件必须为 `root:gsyen`、权限 `0640`。服务必须只监听 loopback，并由
+unit 中的启动后检查再次确认；公网入口只能经 Caddy。
+
+## 业务验收
+
+“进程正在运行”不算验收。影子环境至少需要完成：
+
+1. Web 首页、中文内容、报告列表和详情页；
+2. API `/health`、鉴权失败码、跨域允许/拒绝路径；
+3. 报告读取、OSS 签名下载、过期 URL 和越权对象访问；
+4. 数据库行数、UUID、时间字段、外键及抽样业务结果；
+5. 服务重启、ECS 重启、自恢复和资源上限；
+6. 备份恢复到隔离目录，并复核数据库与对象哈希；
+7. 日志中不存在 `run.app`、GCS、Cloud SQL 或其他 GCP 生产请求。
+
+## 独立回滚
+
+切换窗口内 SGSYEN 可以单独回滚，不要求 HalfSphere 同时回滚：
+
+1. 恢复 SGSYEN 原 DNS/Caddy 路由；
+2. 停止 `sgsyen-web`、`sgsyen-api` 候选 unit；
+3. 恢复切换前数据库写入策略；
+4. 在观察期内继续保留 GCP 数据和 GCS provider；
+5. 对回滚后的业务、数据增量和第三方回调重新验收。
+
+未取得明确确认前，不停止 Cloud Run、不禁用部署身份、不删除 Cloud SQL/GCS/
+Artifact Registry/Secret，也不修改生产 DNS。

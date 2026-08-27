@@ -13,6 +13,7 @@ import MacroPulseBar from '../components/sgsyen/MacroPulseBar';
 import GlobalDataLayerPanel from '../components/sgsyen/GlobalDataLayerPanel';
 import QuantComparisonPanel from '../components/sgsyen/QuantComparisonPanel';
 import { getPageFrameMaxClass, getSgsyenViewMode } from '../lib/layoutMode';
+import { sgsyenApiUrl } from '../lib/apiConfig';
 import ViewModeSwitch from '../components/sgsyen/ViewModeSwitch';
 
 const PAGE_SIZE = 8;
@@ -583,7 +584,7 @@ export default function ResearchPage() {
       const token = session?.access_token;
       if (!token) { setShowLoginModal(true); setDownloading(false); return; }
       const res = await fetch(
-        `https://sgsyen-api-ocjwdme54q-de.a.run.app/reports/${slug}/download`,
+        sgsyenApiUrl(`/reports/${encodeURIComponent(slug)}/download`),
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -591,9 +592,10 @@ export default function ResearchPage() {
       const a = document.createElement('a'); a.href = url;
       a.download = `SGSYEN_${slug}.pdf`; a.target = '_blank';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setDlMsg(isZh ? '🎉 PDF 已通过 GCS 安全通道送达。' : '🎉 PDF delivered via secure GCS channel.');
-    } catch (err: any) {
-      setDlMsg(isZh ? `⚠️ 下载失败：${err.message}` : `⚠️ Failed: ${err.message}`);
+      setDlMsg(isZh ? '🎉 PDF 已通过安全对象存储通道送达。' : '🎉 PDF delivered via secure object storage.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'unknown error';
+      setDlMsg(isZh ? `⚠️ 下载失败：${message}` : `⚠️ Failed: ${message}`);
     } finally { setDownloading(false); }
   };
 
@@ -1286,7 +1288,7 @@ export default function ResearchPage() {
                       {isZh ? '会员专属 PDF 完整报告下载' : 'Member PDF Download'}
                     </h4>
                     <p className="text-[10px] text-zinc-400 font-sans">
-                      {isZh ? '认购会员登录后可获取 GCS 安全通道原件印本。' : 'Sign in as a subscriber to download via secure GCS.'}
+                      {isZh ? '认购会员登录后可通过安全对象存储获取原件印本。' : 'Sign in as a subscriber to download from secure object storage.'}
                     </p>
                   </div>
                   {!isMember ? (

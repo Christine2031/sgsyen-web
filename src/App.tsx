@@ -67,7 +67,7 @@ function InnerApp() {
 
   const containerVariants = {
     hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } }
   };
 
   useEffect(() => {
@@ -616,7 +616,7 @@ function InnerApp() {
                   <span className="text-[9px] uppercase tracking-[0.25em] text-[#A58261] font-sans font-bold block">SGSYEN Secure Credentials</span>
                   <h3 className="text-xl md:text-2xl font-serif font-black text-[#1D1D1B]">智库契约专员登录</h3>
                   <p className="text-stone-500 font-sans text-xs leading-relaxed">
-                    请输入您的認購受托邮箱以确权全站研究报告学术 PDF 离线印本的 GCS 安全下载通道。统一入口，全账户一站式贯通。
+                    请输入您的认购受托邮箱，以通过安全对象存储获取研究报告 PDF 原件。统一入口，全账户一站式贯通。
                   </p>
                 </div>
 
@@ -646,7 +646,7 @@ function InnerApp() {
                     <input
                       type="email"
                       required
-                      placeholder="e.g. Ethan7586@gsyen.com"
+                      placeholder="member@example.com"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className="w-full bg-[#FFFFFF] border border-[#1D1D1B]/15 px-4 py-3 text-sm rounded outline-none text-[#1D1D1B] font-sans focus:border-[#C4A35A] transition-colors placeholder-stone-400"
@@ -685,7 +685,7 @@ function InnerApp() {
 
                 <div className="border-t border-[#1D1D1B]/5 pt-4 text-center">
                   <span className="text-[9px] uppercase tracking-wider font-mono text-stone-400">
-                    *Fully aligned with Google Cloud Run KMS Secret credentials.
+                    *Protected by isolated secret management and token controls.
                   </span>
                 </div>
               </div>
@@ -704,4 +704,3 @@ export default function App() {
     </LocaleProvider>
   );
 }
-

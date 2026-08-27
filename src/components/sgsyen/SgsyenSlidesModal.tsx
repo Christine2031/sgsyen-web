@@ -837,7 +837,7 @@ export default function SgsyenSlidesModal({ onClose, initialSlideIndex = 0 }: Sg
                         
                         <h3 
                           style={{ 
-                            borderYColor: '#A07A3533', 
+                            borderColor: '#A07A3533',
                             lineHeight: 1.62
                           }}
                           className="text-2xl font-serif italic max-w-3xl mx-auto border-y py-6"

@@ -5,6 +5,7 @@ import { useLocale } from '../../context/LocaleContext';
 import { supabase } from '../../lib/supabase';
 import { research } from '../../lib/research';
 import { useNavigate } from 'react-router-dom';
+import { sgsyenApiUrl } from '../../lib/apiConfig';
 
 interface Report {
   id: string;
@@ -86,7 +87,7 @@ const FALLBACK_REPORTS_EN: Report[] = [
 ];
 
 export default function SgsyenReports() {
-  const { t, locale, authorizedEmail, authenticate, setShowLoginModal } = useLocale();
+  const { t, locale, authorizedEmail, setShowLoginModal } = useLocale();
   const navigate = useNavigate();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -156,7 +157,7 @@ export default function SgsyenReports() {
         setDownloading(false);
         return;
       }
-      const res = await fetch(`https://sgsyen-api-ocjwdme54q-de.a.run.app/reports/${slug}/download`, {
+      const res = await fetch(sgsyenApiUrl(`/reports/${encodeURIComponent(slug)}/download`), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -176,13 +177,14 @@ export default function SgsyenReports() {
       document.body.removeChild(a);
 
       setDownloadSuccess(locale === 'zh'
-        ? `🎉 [会员专享下载就绪] 《SGSYEN_${slug}.pdf》 已通过 GCS 安全通道完成交付。`
-        : `🎉 [Authorized Access Ready] "SGSYEN_${slug}.pdf" delivered via secure GCS channel.`
+        ? `🎉 [会员专享下载就绪] 《SGSYEN_${slug}.pdf》 已通过安全对象存储完成交付。`
+        : `🎉 [Authorized Access Ready] "SGSYEN_${slug}.pdf" delivered via secure object storage.`
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'unknown error';
       setDownloadSuccess(locale === 'zh'
-        ? `⚠️ 下载失败：${err.message}`
-        : `⚠️ Download failed: ${err.message}`
+        ? `⚠️ 下载失败：${message}`
+        : `⚠️ Download failed: ${message}`
       );
     } finally {
       setDownloading(false);
@@ -261,8 +263,8 @@ export default function SgsyenReports() {
         <div id="reports-badge-line-right" className="flex flex-col items-end gap-3">
           <div className="text-[10px] uppercase font-mono tracking-wider text-stone-400">
             {locale === 'zh'
-              ? '*与 GCP Cloud Run、GCS 离线持久层以及 Hono API 路由无缝互联'
-              : '*Directly integrated with Google Cloud Run & Secure GCS asset vaults'
+              ? '*与独立 API、对象存储持久层以及 Hono 路由无缝互联'
+              : '*Integrated with the dedicated API and secure object storage'
             }
           </div>
           <button
@@ -438,7 +440,7 @@ export default function SgsyenReports() {
                     <div className="space-y-1">
                       <h4 className="text-xs md:text-sm font-serif font-bold text-[#1D1D1B] flex items-center gap-1.5 leading-tight">
                         <Lock className="w-4 h-4 text-[#C4A35A]" />
-                        {locale === 'zh' ? '认购人专属完整 PDF 报告文件下载 (GCS 安全通道)' : 'Request Certified PDF Copy (Secure GCS Hub)'}
+                        {locale === 'zh' ? '认购人专属完整 PDF 报告文件下载（安全对象存储）' : 'Request Certified PDF Copy (Secure Object Storage)'}
                       </h4>
                       <p className="text-stone-500 font-sans text-[10px] leading-relaxed">
                         {locale === 'zh' 
@@ -492,8 +494,8 @@ export default function SgsyenReports() {
                     </button>
                     <span className="text-[9px] text-[#A58261] uppercase tracking-wider font-mono text-right leading-relaxed block max-w-xs">
                       {locale === 'zh' 
-                        ? '*已经对齐 GCP Cloud Run 密钥库 & 令牌机制，杜绝任何外部未授权漏流风险。'
-                        : '*Aligned with Cloud Run Secret Manager tokens. Protection guaranteed.'
+                        ? '*已经对齐独立密钥管理与令牌机制，避免外部未授权访问。'
+                        : '*Aligned with isolated secret management and token controls.'
                       }
                     </span>
                   </div>
